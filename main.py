@@ -68,10 +68,11 @@ class Capture():
 	def __init__(self):
 		self.capturing = False
 		self.cameraChoice = 0
-		self.activateCamera(cameraChoice)
+		self.c = cv2.VideoCapture(cameraChoice)
 		print "init complete"
 
-	def activateCamera(self, cameraChoice):
+	def changeCamera(self, choice):
+		cameraChoice = choice
 		self.c = cv2.VideoCapture(cameraChoice)
 
 	def startCapture(self):
@@ -102,7 +103,12 @@ class Window(QtGui.QWidget):
 		self.capture = Capture()
 		self.setWindowTitle('SoZen v2.0')
 
-		# self.cameraChoice
+		self.camera_choice_box = QtGui.QSpinBox()
+		self.camera_choice_box.setValue(0)
+		self.camera_choice_box.setRange(0, 4)
+		self.camera_choice_box.setFixedWidth(60)
+		self.camera_choice_box.setToolTip("Restart the camera after changing")
+		self.camera_choice_box.valueChanged[int].connect(self.changeValue)
 
 		self.start_button = QtGui.QPushButton('Start', self)
 		self.start_button.clicked.connect(self.capture.startCapture)
@@ -118,10 +124,15 @@ class Window(QtGui.QWidget):
 		vbox.addWidget(self.start_button)
 		vbox.addWidget(self.end_button)
 		vbox.addWidget(self.quit_button)
+		vbox.addWidget(self.camera_choice_box)
 
 		self.setLayout(vbox)
 		self.setGeometry(100, 100, 200, 200)
 		self.show()
+
+	def changeValue(self, value):
+		if self.sender() == self.camera_choice_box:
+			self.capture.changeCamera(value)
 
 
 
