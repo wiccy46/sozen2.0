@@ -11,6 +11,8 @@ class MusGen(threading.Thread):
         self._stop = threading.Event()
 
     def run(self):
+        # I should put the generative modal here.
+        # Next step is try to play a sample note and see if it works. ..
         for i in range(10):
             self.baseNote = np.argmax(self.zones)
             print self.zones
