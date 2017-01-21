@@ -1,18 +1,26 @@
 import cv2
 import numpy as np
+import threading, sys, time
 
-class MusGen:
+class MusGen(threading.Thread):
     def __init__(self, keyponts, zones):
+        threading.Thread.__init__(self)
         self.kp = keyponts
         self.zones = zones
         self.baseNote = -1
+        self._stop = threading.Event()
 
-    def printNote(self):
-        print self.zones
+    def run(self):
+        for i in range(10):
+            self.baseNote = np.argmax(self.zones)
+            print self.zones
+            time.sleep(1)
 
-    def play(self):
-        self.baseNote = np.argmax(self.zones)
-        print self.baseNote
+    def stop(self):
+        self._stop.set()
+
+
+
 
 
 

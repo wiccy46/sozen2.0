@@ -23,17 +23,12 @@ The python part only manage feature extraction, the Soundscape is generated/trig
 For information about the Soundscape, please refers to the PD patches. 
 """
 
-
-import cv2, sys
+import cv2, sys, time
 import numpy as np
-from matplotlib import pyplot as plt
-import matplotlib.cm as cm
-import os, time
 from PyQt4 import QtGui, QtCore
 import lib.OscPart, lib.Stones, lib.Sands
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 from lib.MusGen import MusGen
-
 
 # Sakura: Only parameter you might need: 
 cameraChoice = 0
@@ -115,15 +110,21 @@ class Capture():
 
 						self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
 												self.threshold_black,  row, column)
-						music = MusGen(self.keypoints, self.blob_zones)
-						music.printNote()
+
+						self.music = MusGen(self.keypoints, self.blob_zones)
+						self.music.start()
+
+
+
+
+
 
 						# Extract blob coordinates
-						self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints_black)
+						self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
 						# Return the diameter of the blob.
-						self.bblob_sizes = lib.Stones.findSize(self.keypoints_black)
+						self.bblob_sizes = lib.Stones.findSize(self.keypoints)
 						# Draw circles for blob
-						frame = cv2.drawKeypoints(frame, self.keypoints_black, np.array([]), (0, 255, 0),
+						frame = cv2.drawKeypoints(frame, self.keypoints, np.array([]), (0, 255, 0),
 												cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 					# ---------------
 
