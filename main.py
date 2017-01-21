@@ -30,10 +30,8 @@ from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 import os, time
 from PyQt4 import QtGui, QtCore
-# from lib.OscPart import OscPart    # Handle OSC communication
-# from lib.Stones import Stones
-# from lib.Sands import Sands
-from lib.CameraCalibration import getCalibrationCoordinates
+import lib.OscPart, lib.Stones, lib.Sands
+from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 
 
 # Sakura: Only parameter you might need: 
@@ -47,22 +45,13 @@ labLighting = 2
 if choice == 1:
 	ratio  = 2
 	fontSize = 2
-	# sometime 0 sometime 1 depends on your camera list
-	# cap = cv2.VideoCapture(cameraChoice)
-	# serial communication used for lighting. 
-	# ser = serial.Serial(port = '/dev/cu.usbserial-AD023UK4')
+
 else:
 	ratio = 1
 	fontSize = 1
 	# Change to the dir of your folder. 
 	os.chdir ("./imgsx")
 	# Picture dimension: 600 x 800. 
-
-
-# Create a trackbar in case for parameter tweaking
-def nothing(x):
-	pass
-
 
 
 class Capture():
@@ -74,6 +63,8 @@ class Capture():
 		self.textColor = 255
 		self.initBrightness = 40
 		self.calibration_pts = calibration_pts
+		self.threshold_black = 183
+		self.threshold_white = 186
 		print "init complete"
 
 
@@ -112,26 +103,79 @@ class Capture():
 
 
 	def startCapture(self):
-		print "start"
 		self.capturing = True
-		print self.c
-		cap = self.c
-		ret, original_frame = cap.read()
+		ret, original_frame = self.c.read()
 		original_frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
 		# Left and now is wrongly flip.
 		original_frame = cv2.flip(original_frame, 0)
 		original_frame = cv2.flip(original_frame, 1)
+		snap_thres = 8.0
+		previous_frame = np.array([])
+		self.just_snapped = False
+		self.snapshot_flag = False
 
 		while(self.capturing):
-			ret, original_frame = cap.read()
-			original_frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
+			ret, frame = self.c.read()
+			frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 			# Left and now is wrongly flip.
-			original_frame = cv2.flip(original_frame, 0)
-			original_frame = cv2.flip(original_frame, 1)
+			frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
+			frame = calibrate(frame, self.calibration_pts)
+
+			try:
+				diff = cv2.absdiff(frame, previous_frame)
+
+				mean_diff = float(np.mean(diff))
+
+				print "Mean Diff: " + str(mean_diff)
+				if self.just_snapped:
+					mean_diff = 3.0
+					self.just_snapped = False
 
 
-			cv2.imshow("Capture", original_frame)
-			cv2.waitKey(200)
+				try:
+					if(self.snapshot_flag == False) & (mean_diff > snap_thres):
+						self.snapshot_flag = True
+					elif(self.snapshot_flag == True) & (mean_diff < snap_thres):
+						# Take a snap shot
+						time.sleep(1.5)
+						print self.snapshot_flag
+						ret, frame = self.c.read()
+						frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+						# Left and now is wrongly flip.
+						frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
+						frame = calibrate(frame, self.calibration_pts)
+						row,column = np.shape(frame)[0], np.shape(frame)[1]
+
+						self.keypoints_black, self.black_blob = lib.Stones.blobDetection(frame,\
+												self.threshold_black, self.threshold_white, row, column)
+						# Extract blob coordinates
+						self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints_black)
+						# Return the diameter of the blob.
+						self.bblob_sizes = lib.Stones.findSize(self.keypoints_black)
+						# Draw circles for blob
+						frame = cv2.drawKeypoints(frame, self.keypoints_black, np.array([]), (0, 255, 0),
+												cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+					# ---------------
+
+						cv2.imshow('Results', cv2.resize(frame, None, \
+							fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
+						cv2.imshow('Black', cv2.resize(self.black_blob, None, \
+							fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
+						self.snapshot_flag = False
+						self.just_snapped = True
+
+					elif (self.snapshot_flag == True) & (mean_diff > snap_thres):
+						pass
+					else:
+						pass
+				except UnboundLocalError:
+					pass
+			except ValueError:
+				pass
+			except cv2.error:
+				pass
+			previous_frame = frame.copy()
+			cv2.waitKey(400)
 
 	def endCapture(self):
 		print "end"
@@ -169,13 +213,20 @@ class Window(QtGui.QWidget):
 		self.quit_button.clicked.connect(self.capture.quitCapture)
 		self.setGeometry(100, 100, 200, 200)
 
-		vbox = QtGui.QVBoxLayout(self)
-		vbox.addWidget(self.start_button)
-		vbox.addWidget(self.end_button)
-		vbox.addWidget(self.quit_button)
-		vbox.addWidget(self.camera_choice_box)
+		lbox = QtGui.QVBoxLayout(self)
+		lbox.addWidget(self.start_button)
+		lbox.addWidget(self.end_button)
+		lbox.addWidget(self.quit_button)
+		lbox.addWidget(self.camera_choice_box)
 
-		self.setLayout(vbox)
+		rbox = QtGui.QVBoxLayout(self)
+
+		box = QtGui.QHBoxLayout(self)
+		box.addLayout(lbox)
+		box.addLayout(rbox)
+
+
+		self.setLayout(box)
 		self.setGeometry(100, 100, 200, 200)
 		self.show()
 

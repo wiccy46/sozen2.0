@@ -10,7 +10,7 @@ Functions included:
 """
 import cv2
 import numpy as np
-import oscPart
+import OscPart
 
 def findSize(keypoints):
 	amount = len(keypoints)
@@ -178,7 +178,7 @@ def findBlobs(image, frame_row):
 # 2. findBlobs() use blob detection to extract the keypoints of the blobs
 # 3. send OSC. Send XY, Amount, Size, Zone to PureData
 def blobDetection(img, threshold_black, threshold_white, frame_row, \
-	frame_column, choice):
+	frame_column):
 	# Convert to binary for blob tracking
 	ret, black_blob = cv2.threshold(255-img, threshold_black, 255, cv2.THRESH_BINARY)
 	# ret, white_blob = cv2.threshold(img, threshold_white, 255, cv2.THRESH_BINARY)
@@ -196,7 +196,7 @@ def blobDetection(img, threshold_black, threshold_white, frame_row, \
 	# arguments: keypoints, blob amount, 1 for black 2 for white
 	# OSC communication
 	# oscPart.sendBlobs(zones, sortedZone, combo, x , y, black_keypoint_amount)
-	oscPart.sendBlobs2 (zones, sortedZone, x, black_keypoint_amount)
+	OscPart.sendBlobs2 (zones, sortedZone, x, black_keypoint_amount)
 	# oscPart.sendBlobsViaOsc(keypoints_black, black_keypoint_amount, combination, 1, frame_row, frame_column, choice)
 	# oscPart.sendBlobsViaOsc(keypoints_white, white_keypoint_amount, combination, 2, frame_row, frame_column, choice)
 	#---------------------------------------------#

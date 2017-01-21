@@ -16,10 +16,10 @@ together for meaningful line length extraction.
 
 import cv2
 import numpy as np
-import oscPart
+import OscPart
 import cv2.cv as cv  # Used in circle detection
 import math
-import stones # use its whichZone function
+import Stones # use its whichZone function
 
 def lineDetectionFFT(img):
 	"""
@@ -73,7 +73,7 @@ def findZone(lines_center, frame_row, frame_column):
 		x = float(lines_center[i,0])/frame_row
 		y = float(lines_center[i,1])/frame_column
 		# Call function to detect which zone the point belongs to. 
-		sand_all_zone[i] = stones.whichZone(x, y)
+		sand_all_zone[i] = Stones.whichZone(x, y)
 	# Find a histogram of the zones, treated as the density
 	hist = np.histogram(sand_all_zone, bins = [1,2,3,4,5,6,7,8,9,10], density = False)
 	return sand_all_zone, hist[0]
@@ -242,7 +242,7 @@ def findDensity(img, frame_row, frame_column, cannyMin, cannyMax, fontSize):
 	density[8] = np.sum(temp[int(frame_column* 2/3) :frame_column, int(frame_row* 2/3): frame_row])/maxDen
 
 	sumDensity = np.sum(density)
-	oscPart.sendDensity(density, sumDensity)
+	OscPart.sendDensity(density, sumDensity)
 
 	cMin = "CannyMin: " + str (cannyMin + 1)
 	cMax = "CannyMax: " + str (cannyMax + 1)
