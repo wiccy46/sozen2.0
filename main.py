@@ -33,6 +33,7 @@ from PyQt4 import QtGui, QtCore
 # from lib.OscPart import OscPart    # Handle OSC communication
 # from lib.Stones import Stones
 # from lib.Sands import Sands
+from lib.CameraCalibration import getCalibrationCoordinates
 
 
 # Sakura: Only parameter you might need: 
@@ -66,23 +67,70 @@ def nothing(x):
 
 class Capture():
 	def __init__(self):
+		global  calibration_pts
 		self.capturing = False
 		self.cameraChoice = 0
 		self.c = cv2.VideoCapture(cameraChoice)
+		self.textColor = 255
+		self.initBrightness = 40
+		self.calibration_pts = calibration_pts
 		print "init complete"
+
+
+	def perspectiveAdjustment(self, inputImage):
+		# 1. Slice the img
+		new_img = inputImage[np.min(self.calibration_points[:, 1]): np.max(self.calibration_points[:, 1]), \
+				  np.min(self.calibration_points[:, 0]): np.max(self.calibration_points[:, 0])]
+		row, column = np.shape(new_img)[0], np.shape(new_img)[1]
+
+		# 2. Apply perspective adjustment
+		pts1 = np.float32([[self.calibration_points[0, 0], self.calibration_points[0, 1]], \
+						   [self.calibration_points[1, 0], self.calibration_points[1, 1]], \
+						   [self.calibration_points[2, 0], self.calibration_points[2, 1]], \
+						   [self.calibration_points[3, 0], self.calibration_points[3, 1]]])
+
+		pts2 = np.float32(
+			[
+				[0, 0], [0, column], [row, 0], [row, column]
+			]
+		)
+
+		pers = cv2.getPerspectiveTransform(pts1, pts2)
+		# For some reason, the result is rotated -90 degrees.
+		# So I use rot90 to rotate it 270 degrees to get back to normal
+		calibrated_img = cv2.warpPerspective(inputImage, pers, (row, column))
+		calibrated_img = np.rot90(calibrated_img, 3)
+		calibrated_img = cv2.flip(calibrated_img, 1)
+		return calibrated_img
+
 
 	def changeCamera(self, choice):
 		cameraChoice = choice
 		self.c = cv2.VideoCapture(cameraChoice)
+
+
+
 
 	def startCapture(self):
 		print "start"
 		self.capturing = True
 		print self.c
 		cap = self.c
+		ret, original_frame = cap.read()
+		original_frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
+		# Left and now is wrongly flip.
+		original_frame = cv2.flip(original_frame, 0)
+		original_frame = cv2.flip(original_frame, 1)
+
 		while(self.capturing):
-			ret, frame = cap.read()
-			cv2.imshow("Capture", frame)
+			ret, original_frame = cap.read()
+			original_frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
+			# Left and now is wrongly flip.
+			original_frame = cv2.flip(original_frame, 0)
+			original_frame = cv2.flip(original_frame, 1)
+
+
+			cv2.imshow("Capture", original_frame)
 			cv2.waitKey(200)
 
 	def endCapture(self):
@@ -109,6 +157,7 @@ class Window(QtGui.QWidget):
 		self.camera_choice_box.setFixedWidth(60)
 		self.camera_choice_box.setToolTip("Restart the camera after changing")
 		self.camera_choice_box.valueChanged[int].connect(self.changeValue)
+
 
 		self.start_button = QtGui.QPushButton('Start', self)
 		self.start_button.clicked.connect(self.capture.startCapture)
@@ -137,6 +186,8 @@ class Window(QtGui.QWidget):
 
 
 
+calibration_pts = getCalibrationCoordinates()
+print calibration_pts
 
 def main():
 	app = QtGui.QApplication(sys.argv)
