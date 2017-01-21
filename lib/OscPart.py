@@ -34,7 +34,6 @@ OSC function to send out blob information.
 
 The zone should be in a format of "0 1 0 0 1 0 1 0 0" (1 = on for that zone and 0 = off)
 """
-
 # This is currently used/. 
 def sendBlobs2(zones, sortedZone, x, amount):
 	# Put the granular parameters her this time, 

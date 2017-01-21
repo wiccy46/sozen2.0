@@ -32,6 +32,7 @@ import os, time
 from PyQt4 import QtGui, QtCore
 import lib.OscPart, lib.Stones, lib.Sands
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
+from lib.MusGen import MusGen
 
 
 # Sakura: Only parameter you might need: 
@@ -42,16 +43,11 @@ cameraChoice = 0
 choice = 1
 # 0: Dark, 1: Normal, 2: Bright
 labLighting = 2
-if choice == 1:
-	ratio  = 2
-	fontSize = 2
 
-else:
-	ratio = 1
-	fontSize = 1
-	# Change to the dir of your folder. 
-	os.chdir ("./imgsx")
-	# Picture dimension: 600 x 800. 
+ratio  = 2
+fontSize = 2
+
+
 
 
 class Capture():
@@ -64,40 +60,15 @@ class Capture():
 		self.initBrightness = 40
 		self.calibration_pts = calibration_pts
 		self.threshold_black = 183
-		self.threshold_white = 186
-		print "init complete"
-
-
-	def perspectiveAdjustment(self, inputImage):
-		# 1. Slice the img
-		new_img = inputImage[np.min(self.calibration_points[:, 1]): np.max(self.calibration_points[:, 1]), \
-				  np.min(self.calibration_points[:, 0]): np.max(self.calibration_points[:, 0])]
-		row, column = np.shape(new_img)[0], np.shape(new_img)[1]
-
-		# 2. Apply perspective adjustment
-		pts1 = np.float32([[self.calibration_points[0, 0], self.calibration_points[0, 1]], \
-						   [self.calibration_points[1, 0], self.calibration_points[1, 1]], \
-						   [self.calibration_points[2, 0], self.calibration_points[2, 1]], \
-						   [self.calibration_points[3, 0], self.calibration_points[3, 1]]])
-
-		pts2 = np.float32(
-			[
-				[0, 0], [0, column], [row, 0], [row, column]
-			]
-		)
-
-		pers = cv2.getPerspectiveTransform(pts1, pts2)
-		# For some reason, the result is rotated -90 degrees.
-		# So I use rot90 to rotate it 270 degrees to get back to normal
-		calibrated_img = cv2.warpPerspective(inputImage, pers, (row, column))
-		calibrated_img = np.rot90(calibrated_img, 3)
-		calibrated_img = cv2.flip(calibrated_img, 1)
-		return calibrated_img
 
 
 	def changeCamera(self, choice):
 		cameraChoice = choice
 		self.c = cv2.VideoCapture(cameraChoice)
+
+	def changeBt(self, val):
+		self.threshold_black = val
+
 
 
 
@@ -123,22 +94,18 @@ class Capture():
 
 			try:
 				diff = cv2.absdiff(frame, previous_frame)
-
 				mean_diff = float(np.mean(diff))
-
-				print "Mean Diff: " + str(mean_diff)
 				if self.just_snapped:
 					mean_diff = 3.0
 					self.just_snapped = False
 
-
 				try:
 					if(self.snapshot_flag == False) & (mean_diff > snap_thres):
+						print "Mean Diff: " + str(mean_diff)
 						self.snapshot_flag = True
 					elif(self.snapshot_flag == True) & (mean_diff < snap_thres):
 						# Take a snap shot
 						time.sleep(1.5)
-						print self.snapshot_flag
 						ret, frame = self.c.read()
 						frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 						# Left and now is wrongly flip.
@@ -146,8 +113,11 @@ class Capture():
 						frame = calibrate(frame, self.calibration_pts)
 						row,column = np.shape(frame)[0], np.shape(frame)[1]
 
-						self.keypoints_black, self.black_blob = lib.Stones.blobDetection(frame,\
-												self.threshold_black, self.threshold_white, row, column)
+						self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
+												self.threshold_black,  row, column)
+						music = MusGen(self.keypoints, self.blob_zones)
+						music.printNote()
+
 						# Extract blob coordinates
 						self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints_black)
 						# Return the diameter of the blob.
@@ -201,6 +171,10 @@ class Window(QtGui.QWidget):
 		self.camera_choice_box.setFixedWidth(60)
 		self.camera_choice_box.setToolTip("Restart the camera after changing")
 		self.camera_choice_box.valueChanged[int].connect(self.changeValue)
+		self.camera_choice_laybel = QtGui.QLabel('Camera')
+		self.camera_choice_laybel.setFixedSize(50, 20)
+
+
 
 
 		self.start_button = QtGui.QPushButton('Start', self)
@@ -211,421 +185,50 @@ class Window(QtGui.QWidget):
 
 		self.quit_button = QtGui.QPushButton('Quit', self)
 		self.quit_button.clicked.connect(self.capture.quitCapture)
-		self.setGeometry(100, 100, 200, 200)
 
-		lbox = QtGui.QVBoxLayout(self)
-		lbox.addWidget(self.start_button)
-		lbox.addWidget(self.end_button)
-		lbox.addWidget(self.quit_button)
-		lbox.addWidget(self.camera_choice_box)
-
-		rbox = QtGui.QVBoxLayout(self)
-
-		box = QtGui.QHBoxLayout(self)
-		box.addLayout(lbox)
-		box.addLayout(rbox)
+		lbox = QtGui.QGridLayout(self)
+		lbox.addWidget(self.start_button, 1,0, 1,1)
+		lbox.addWidget(self.end_button, 2, 0, 2, 1)
+		lbox.addWidget(self.quit_button, 3, 0, 3, 1)
+		lbox.addWidget(self.camera_choice_laybel, 5, 0)
+		lbox.addWidget(self.camera_choice_box, 5, 1)
 
 
-		self.setLayout(box)
-		self.setGeometry(100, 100, 200, 200)
+		# self.bt_laybel = QtGui.QLabel('Blob Threshold')
+		# self.bt_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+		# self.bt_slider.setRange(0, 255)
+		# self.bt_slider.setValue(183) # Need to change here.
+		# self.bt_slider.valueChanged[int].connect(self.changeValue)
+        #
+        #
+		# rbox = QtGui.QGridLayout(self)
+		# rbox.addWidget(self.bt_laybel, 1, 0)
+		# rbox.addWidget(self.bt_slider,1,1)
+        #
+        #
+		# box = QtGui.QHBoxLayout(self)
+		# box.addLayout(lbox)
+		# box.addLayout(rbox)
+		self.setLayout(lbox)
+		self.setGeometry(100, 100, 400, 400)
 		self.show()
 
 	def changeValue(self, value):
 		if self.sender() == self.camera_choice_box:
 			self.capture.changeCamera(value)
 
+		elif self.sender() == self.bt_slider:
+			self.capture.changeBt(value)
 
 
 
+# The first step is to get the calibration coordinates
 calibration_pts = getCalibrationCoordinates()
-print calibration_pts
 
 def main():
 	app = QtGui.QApplication(sys.argv)
 	sozen = Window()
 	sys.exit(app.exec_())
 
-
 if __name__ == '__main__':
 	main()
-"""
-
-trackbarWindowName = "Trackbars"
-cv2.namedWindow(trackbarWindowName, cv2.cv.CV_WINDOW_NORMAL)
-cv2.resizeWindow(trackbarWindowName, 400, 150)
-
-
-
-def calibrate(inputImage, clb_pts):
-	# 1. Slice the img 
-	new_img = inputImage[np.min(clb_pts[:, 1]) : np.max(clb_pts[:,1]), \
-		np.min(clb_pts[:, 0]): np.max(clb_pts[ :, 0])]
-	row, column = np.shape(new_img)[0], np.shape(new_img)[1]
-
-	# 2. Apply perspective adjustment
-	pts1 = np.float32([[clb_pts[0,0], clb_pts[0,1] ], \
-		[clb_pts[1,0], clb_pts[1,1]], \
-		[clb_pts[2,0], clb_pts[2,1] ],\
-		[clb_pts[3,0], clb_pts[3,1] ]])
-
-	pts2 = np.float32(
-		[
-		[0, 0], [0 , column],[row, 0], [row, column]
-		]
-		)
-
-	pers = cv2.getPerspectiveTransform(pts1,pts2)
-	# For some reason, the result is rotated -90 degrees. 
-	# So I use rot90 to rotate it 270 degrees to get back to normal
-	calibrated_img = cv2.warpPerspective(inputImage, pers, (row, column))
-	calibrated_img =  np.rot90(calibrated_img, 3)
-	calibrated_img=cv2.flip(calibrated_img,1)
-	return calibrated_img
-
-
-def getCalibrationCoordinates(inputImage):
-	# Create a matplotlib figure for interactively choose 4 cornes
-	fig = plt.figure(1, figsize = (10, 10))
-	plt.gca().imshow(inputImage, cmap = cm.Greys_r), plt.title('Click on 4 corners to calibrate.')
-	plt.xlabel("Start from top left then move Z shape.")
-	pts = np.asarray(plt.ginput(4))
-	if len(pts) == 4:
-		plt.close()
-	return pts.astype(int)
-
-
-#ADAPTIVE_THRESH_MEAN_C, cv2.ADAPTIVE_THRESH_GAUSSIAN_C
-def adaptiveGaussian(inputImage, row, column):
-	th3 = cv2.adaptiveThreshold(inputImage,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
-            cv2.THRESH_BINARY,15,6)
-	cv2.imshow('adaptiveGaussian',\
-		cv2.resize(th3, None, fx = 0.75, fy = 0.75, interpolation = cv2.INTER_AREA))
-
-
-def lightingCondition(option):
-	if option == 0:
-		blackThreInit = 225
-		whiteThreInit = 83
-
-
-	elif option == 1:
-		blackThreInit = 190
-		whiteThreInit = 170
-
-	else:
-		blackThreInit = 183
-		whiteThreInit = 186 
-	return blackThreInit, whiteThreInit
-
-"""
-
-"""	
-def camera():
-	global snapshotFlag, ratio, labLighting
-	textColor = 255
-	initBrightness = 40
-	# Create a previous frame buffer
-	# ser.write(chr(initBrightness)+chr(initBrightness)+chr(initBrightness)+chr(initBrightness)+chr(0))
-	# time.sleep(.5) # Coupe with the delay to Arudino
-	ret, original_img = cap.read()
-	original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
-	# Left and now is wrongly flip. 
-	original_img = cv2.flip(original_img, 0)
-	original_img = cv2.flip(original_img, 1)
-	calibration_points = getCalibrationCoordinates(original_img)
-	# ser.write(chr(0)+chr(0)+chr(0)+chr(0)+chr(0)) # Switch leds off
-	prev_video = np.array([])
-	snapshotFlag = False
-	justSnap = False # A flag that indicates a just snap is happened. 
-
-	# The threshold should be based on sand density and std. 
-	threshold_black = 0
-	threshold_white = 0
-	snap_thres = 8.0
-	# This part is used temporally for the lab demostration.
-	# Depending on the lighting condition. The initial thresholds of the bold detections will alter. 
-	
-	# Get initial lighting threshold for the slider. 
-	blackThreInit, whiteThreInit = lightingCondition(labLighting)
-
-		
-	# -------------------------------------#	
-	# Create sliders for parameter control
-	cv2.createTrackbar("threshold_black", trackbarWindowName, blackThreInit, 240, nothing)
-	cv2.createTrackbar("threshold_white", trackbarWindowName, whiteThreInit, 240, nothing)
-	cv2.createTrackbar("lineRho", trackbarWindowName, 8, 20, nothing)
-	cv2.createTrackbar("lineTheta", trackbarWindowName, 179, 360, nothing)
-	cv2.createTrackbar("cannyMin", trackbarWindowName, 31, 250, nothing)
-	cv2.createTrackbar("cannyMax", trackbarWindowName, 48, 250, nothing)
-	cv2.createTrackbar("circleP1", trackbarWindowName, 30, 100, nothing)
-	cv2.createTrackbar("circleP2", trackbarWindowName, 50, 100, nothing)
-	cv2.createTrackbar("brightness", trackbarWindowName, 40, 150, nothing) # Range between 0 ~ 255
-	cv2.createTrackbar("lineLenFac", trackbarWindowName, 25, 40, nothing)
-	cv2.createTrackbar("lineGapFac", trackbarWindowName, 65, 80, nothing)
-
-	# Here comes the main loop
-	while True:
-		ret,original_img = cap.read()
-		# Transform video into greyscale
-		# Left and now is wrongly flip. 
-		# Throw an exception: cv2.error. Then jump to the end of the loop/ 
-		img = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
-		img = cv2.flip(img, 0)
-		img = cv2.flip(img, 1)
-		# The unscaled image is used for 
-		# scaleratio = 1.0 / ratio
-
-		# Calibrate perspective.
-		img = calibrate(img, calibration_points)
-		row, column = np.shape(img)[0], np.shape(img)[1]
-
-		# Retriving parameters.. 
-		threshold_black = cv2.getTrackbarPos("threshold_black", trackbarWindowName)
-		threshold_white = cv2.getTrackbarPos("threshold_white", trackbarWindowName)
-		lineRho = cv2.getTrackbarPos("lineRho", trackbarWindowName)
-		lineTheta = cv2.getTrackbarPos("lineTheta", trackbarWindowName)
-		cannyMin = cv2.getTrackbarPos("cannyMin", trackbarWindowName)
-		cannyMax = cv2.getTrackbarPos("cannyMax", trackbarWindowName)
-		p1 = cv2.getTrackbarPos("circleP1", trackbarWindowName)
-		p2 = cv2.getTrackbarPos("circleP2", trackbarWindowName)
-		brightness = cv2.getTrackbarPos("brightness", trackbarWindowName)
-		lineLenFac = cv2.getTrackbarPos("lineLenFac", trackbarWindowName)
-		lineGapFac = cv2.getTrackbarPos("lineGapFac", trackbarWindowName)
-
-	
-		try:
-			# Calculate the frame difference
-			diff = cv2.absdiff(img, prev_video)
-			mean_diff = float(np.mean(diff))
-
-			# If a snap was just taken in the previous loop. By pass the mean_diff.
-			# Because the difference between light_on and light_off is too big 
-			# even if there is nothing changed on the zen garden. 
-			if justSnap:
-				mean_diff = 3.0
-				justSnap = False
-			# print mean_diff
-
-			try:
-			
-				if (snapshotFlag == False) & (mean_diff > snap_thres) :
-					snapshotFlag = True
-
-				elif (snapshotFlag == True) & (mean_diff < snap_thres):
-					# Take a snapshot
-					# Wait 2 seconds to make sure the hand is moved away from the camera area
-					time.sleep(1.5)
-					print "SNAPPED!"
-					# ser.write(chr(brightness)+chr(brightness)+chr(brightness)+chr(brightness)+chr(0))
-					# time.sleep(0.5) # Coupe with the delay to Arudino
-					ret,original_img = cap.read()
-					# Transform video into greyscale
-					img = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
-					img = cv2.flip(img, 0)
-					img = cv2.flip(img, 1)
-					img = calibrate(img, calibration_points)
-					row, column = np.shape(img)[0], np.shape(img)[1]
-
-		#---------------------------------------------------------------------------------------------------#
-		# First step, stone detection
-					keypoints_black, black_blob = stones.blobDetection(img, \
-						threshold_black, threshold_white, row, column, choice)
-					# Extract blob coordinates
-					bblob_coordinates = stones.findCoordinates(keypoints_black)
-					# Return the diameter of the blob. 
-					bblob_sizes = stones.findSize(keypoints_black)
-
-		# Draw circles for blob
-					img = cv2.drawKeypoints(img, \
-						keypoints_black, np.array([]), (0,255,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-		#---------------------------------------------------------------------------------------------------#
-		# Line Detection here
-					img = cv2.medianBlur(img,1)   # Not sure if necessary
-					lines, edges = sands.lineDetection(img, lineRho, lineTheta, cannyMin, cannyMax,\
-						lineLenFac, lineGapFac, row)
-					# Need to add error exception 
-					try:
-						lines = sands.removeBlobLines(lines, bblob_coordinates, bblob_sizes)
-						lines_center = sands.findLineCenter(lines)
-						lines_zone, lines_hist = sands.findZone(lines_center, row, column)
-						lines_angle = sands.findAngle(lines)
-						lines_angAvg = sands.angleAverage(lines_angle, lines_zone)
-						oscPart.sendSands(lines_hist, lines_angAvg)
-					except TypeError:
-						"No stones found!"
-		# # --------------------------------------------------------------------------------------------------#
-					try: 
-						for eachLine in lines:
-							for x1,y1,x2,y2 in lines:
-								cv2.line(img,(x1,y1),(x2,y2),(15,15,200),2)
-					except TypeError:
-						print "No line found!"
-
-					# Display parameters. 
-					bblobStr = "Tr_b: " + str(threshold_black) 
-					rhoStr = "rho: " + str(lineRho + 1) 
-					thetaStr = "theta: " + str(lineTheta + 1) 
-					cMin = "CannyMin: " + str (cannyMin + 1)
-					cMax = "CannyMax: " + str (cannyMax + 1)
-					lineLenFacStr = "lineLenFac: " + str (lineLenFac )
-					lineGapFacStr = "lineGapFac: " + str (lineGapFac )
-					brightnessStr = "brightness" + str (brightness)
-
-					cv2.putText(img, rhoStr, (10 , 20 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-					cv2.putText(img, thetaStr, (10 , 40 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-					cv2.putText(img, cMin, (10 , 60 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-					cv2.putText(img, cMax, (10 , 80 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-					cv2.putText(img, bblobStr, (10 , 100 ), cv2.FONT_HERSHEY_PLAIN, fontSize,  textColor)
-					cv2.putText(img, lineLenFacStr, (10 , 120 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-					cv2.putText(img, lineGapFacStr, (10 , 140 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-					cv2.putText(img, brightnessStr, (10 , 160 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-					# Show edges, result image, and blobs
-					cv2.imshow('edges',cv2.resize(edges, None, fx = 0.5, fy = 0.5, interpolation = cv2.INTER_AREA))
-					cv2.imshow('Black', cv2.resize(black_blob, None, \
-						fx = 0.5, fy = 0.5, interpolation = cv2.INTER_AREA))
-					cv2.imshow('Results', cv2.resize(img, None, \
-						fx = 0.5, fy = 0.5, interpolation = cv2.INTER_AREA))
-
-					# Reset flags. 
-					snapshotFlag =False
-					justSnap = True
-					# ser.write(chr(0)+chr(0)+chr(0)+chr(0)+chr(0)) # Switch leds off
-				elif (snapshotFlag == True) & (mean_diff > snap_thres): 
-					pass
-				else: 
-					pass
-
-			except UnboundLocalError:
-				pass
-
-		except ValueError:
-			pass
-		except cv2.error:
-			pass
-
-		# Record the previous frame. 
-		prev_video = img.copy()
-
-		# Put all send OSC here. 
-
-		if cv2.waitKey(500) & 0xff == 27:
-			cv2.destroyAllWindows()
-			break
-
-
-
-
-def stillImage():
-	print "still image mode loaded"
-	# filename = "horizontal.png"
-	filename = 'f2.png'
-	viewRate = 1
-	textColor = 255
-	img = cv2.imread(filename,0)
-	cpts = getCalibrationCoordinates(img)
-	# Create trackbars for parameters
-
-	cv2.createTrackbar("threshold_black", trackbarWindowName, 179, 200, nothing)
-	cv2.createTrackbar("threshold_white", trackbarWindowName, 160, 200, nothing)
-	cv2.createTrackbar("lineRho", trackbarWindowName, 8, 20, nothing)
-	cv2.createTrackbar("lineTheta", trackbarWindowName, 179, 360, nothing)
-	cv2.createTrackbar("cannyMin", trackbarWindowName, 22, 250, nothing)
-	cv2.createTrackbar("cannyMax", trackbarWindowName, 48, 250, nothing)
-	# cv2.createTrackbar("circleP1", trackbarWindowName, 30, 100, nothing)
-	# cv2.createTrackbar("circleP2", trackbarWindowName, 50, 100, nothing)
-	cv2.createTrackbar("lineLenFac", trackbarWindowName, 13, 40, nothing)
-	cv2.createTrackbar("lineGapFac", trackbarWindowName, 65, 80, nothing)
-
-	while True:
-		img = cv2.imread(filename,0)
-		img = calibrate(img, cpts)
-
-		# Retrive parameters. 
-		threshold_black = cv2.getTrackbarPos("threshold_black", trackbarWindowName)
-		threshold_white = cv2.getTrackbarPos("threshold_white", trackbarWindowName)
-		lineRho = cv2.getTrackbarPos("lineRho", trackbarWindowName)
-		lineTheta = cv2.getTrackbarPos("lineTheta", trackbarWindowName)
-		cannyMin = cv2.getTrackbarPos("cannyMin", trackbarWindowName)
-		cannyMax = cv2.getTrackbarPos("cannyMax", trackbarWindowName)
-		lineLenFac = cv2.getTrackbarPos("lineLenFac", trackbarWindowName)
-		lineGapFac = cv2.getTrackbarPos("lineGapFac", trackbarWindowName)
-
-		row, column =  np.shape(img)[0], np.shape(img)[1]
-		# Stone tracking. 
-		keypoints_black, black_blob = stones.blobDetection(img, \
-			threshold_black, threshold_white, row, column, choice)
-
-		bblob_coordinates = stones.findCoordinates(keypoints_black)		
-		bblob_sizes = stones.findSize(keypoints_black) # Diameter Use it for getting rid of lines detected in that area.  
-
-		# Draw circles for blob
-		img = cv2.drawKeypoints(img, \
-			keypoints_black, np.array([]), (0,255,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-# ---------------------------------------------------------------------------------------------------#
-# Line Detection here
-		img = cv2.medianBlur(img,3)   # Not sure if necessary
-		lines, edges = sands.lineDetection(img, lineRho, lineTheta, cannyMin, cannyMax,\
-			lineLenFac, lineGapFac, row)
-		lines = sands.removeBlobLines(lines, bblob_coordinates, bblob_sizes)
-		lines_center = sands.findLineCenter(lines)
-		lines_zone, lines_hist = sands.findZone(lines_center, row, column)
-		lines_angle = sands.findAngle(lines)
-		lines_angAvg = sands.angleAverage(lines_angle, lines_zone)
-		# I need to figure out the range of lines_hist in order to have a more precise mapping.
-		# print "Histogram map is : "
-		# print lines_hist
-		# print lines_angle
-		oscPart.sendSands(lines_hist, lines_angAvg)
-# # --------------------------------------------------------------------------------------------------#
-		try: 		
-			for x1,y1,x2,y2 in lines:
-				cv2.line(img,(x1,y1),(x2,y2),(15,15,200),2)
-		except TypeError:
-			print "No line found!"
-
-		# Display parameters. 
-		bblobStr = "Tr_b: " + str(threshold_black) 
-		rhoStr = "rho: " + str(lineRho + 1) 
-		thetaStr = "theta: " + str(lineTheta + 1) 
-		cMin = "CannyMin: " + str (cannyMin + 1)
-		cMax = "CannyMax: " + str (cannyMax + 1)
-		lineLenFacStr = "lineLenFac: " + str (lineLenFac + 1)
-		lineGapFacStr = "lineGapFac: " + str (lineGapFac + 1)
-		cv2.putText(img, rhoStr, (10 , 20 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-		cv2.putText(img, thetaStr, (10 , 40 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-		cv2.putText(img, cMin, (10 , 60 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-		cv2.putText(img, cMax, (10 , 80 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-		cv2.putText(img, bblobStr, (10 , 100 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-		cv2.putText(img, lineLenFacStr, (10 , 120 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-		cv2.putText(img, lineGapFacStr, (10 , 140 ), cv2.FONT_HERSHEY_PLAIN, fontSize, textColor)
-		# Show edges, result image, and blobs
-		cv2.imshow('edges',cv2.resize(edges, None\
-			, fx = viewRate, fy = viewRate, interpolation = cv2.INTER_AREA))
-		cv2.imshow('Black', cv2.resize(black_blob, None, \
-			fx = viewRate, fy = viewRate, interpolation = cv2.INTER_AREA))
-		cv2.imshow('Results', cv2.resize(img, None,\
-			fx = viewRate, fy = viewRate, interpolation = cv2.INTER_AREA))
-		if cv2.waitKey(200000) & 0xff == 27:
-			cv2.destroyAllWindows()
-			break
-
-print ("Press Esc to Quit")
-if choice == 1:
-	camera()
-elif choice == 2:
-	stillImage()
-else:
-	print "Program Quited, Invalid Input"
-
-# Switch off the soundSwitch in PD. 
-oscPart.closeup()
-# Need to add a program stop
-
-"""
-
-
-
-
-
-
-
