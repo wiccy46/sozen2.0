@@ -10,7 +10,7 @@ Functions included:
 """
 import cv2
 import numpy as np
-import OscPart
+
 
 
 def findSize(keypoints):

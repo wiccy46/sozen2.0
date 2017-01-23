@@ -26,7 +26,7 @@ For information about the Soundscape, please refers to the PD patches.
 import cv2, sys, time
 import numpy as np
 from PyQt4 import QtGui, QtCore
-import lib.OscPart, lib.Stones, lib.Sands
+import lib.Stones
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 from lib.MusGen import MusGen
 
@@ -43,8 +43,6 @@ ratio  = 2
 fontSize = 2
 
 
-
-
 class Capture():
 	def __init__(self):
 		global  calibration_pts
@@ -56,17 +54,12 @@ class Capture():
 		self.calibration_pts = calibration_pts
 		self.threshold_black = 183
 
-
 	def changeCamera(self, choice):
 		cameraChoice = choice
 		self.c = cv2.VideoCapture(cameraChoice)
 
 	def changeBt(self, val):
 		self.threshold_black = val
-
-
-
-
 
 	def startCapture(self):
 		self.capturing = True
@@ -96,7 +89,7 @@ class Capture():
 
 				try:
 					if(self.snapshot_flag == False) & (mean_diff > snap_thres):
-						print "Mean Diff: " + str(mean_diff)
+						print ("Mean Diff: " + str(mean_diff))
 						self.snapshot_flag = True
 					elif(self.snapshot_flag == True) & (mean_diff < snap_thres):
 						# Take a snap shot
@@ -149,11 +142,11 @@ class Capture():
 			cv2.waitKey(400)
 
 	def endCapture(self):
-		print "end"
+		print ("end")
 		self.capturing = False
 
 	def quitCapture(self):
-		print "quit"
+		print ("quit")
 		cap = self.c
 		self.capturing = False
 		cv2.destroyAllWindows()

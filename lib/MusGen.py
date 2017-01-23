@@ -9,17 +9,38 @@ class MusGen(threading.Thread):
         self.zones = zones
         self.baseNote = -1
         self._stop = threading.Event()
+        self.notes = np.zeros(9)
 
     def run(self):
         # I should put the generative modal here.
         # Next step is try to play a sample note and see if it works. ..
-        for i in range(10):
-            self.baseNote = np.argmax(self.zones)
-            print self.zones
-            time.sleep(1)
+        self.baseNote =  np.argmax(self.zones)
+        self.notes[self.baseNote] = 0
+        if (self.baseNote == 0):
+            for i in range (9):
+                if i == 0:
+                    pass
+                else:
+                    self.notes[i] = self.notes[i - 1] + 1
+        elif (self.baseNote == 8):
+            for i in range (9, 0):
+                if i == 8:
+                    pass
+                else:
+                    self.note[i] = self.note[i + 1] - 1
+        else:
+            for i in range(self.baseNote -1, 0):
+                self.notes[i] = self.notes[i + 1] - 1
+            for i in range(self.baseNote + 1, 8):
+                self.notes[i] = self.notes[i - 1] + 1
+        print (self.notes)
 
-    def stop(self):
+
+    def stopit(self):
         self._stop.set()
+
+    def stopped(self):
+        return self._stopper.is_set()
 
 
 

@@ -16,7 +16,6 @@ together for meaningful line length extraction.
 
 import cv2
 import numpy as np
-import OscPart
 import cv2.cv as cv  # Used in circle detection
 import math
 import Stones # use its whichZone function
@@ -58,7 +57,7 @@ def findLineCenter(lines):
 	line_row = np.shape(lines)[0]
 	lines_center = np.empty([line_row, 2], dtype = int)
 	for i in range(line_row):
-	 	x1 = lines[i,0]
+		x1 = lines[i,0]
 		y1 = lines[i,1]
 		x2 = lines[i,2]
 		y2 = lines[i,3]

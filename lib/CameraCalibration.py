@@ -1,6 +1,8 @@
 # Image Gradients, edges
 import cv2
 import numpy as np
+import matplotlib
+matplotlib.use('Qt4Agg')
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 

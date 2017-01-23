@@ -65,7 +65,7 @@ def sendBlobs2(zones, sortedZone, x, amount):
 		granSam = 0
 	else:
 		granSam = np.random.randint(0,3) + 1
-	print "Gransam is " + str(granSam)
+	# print ("Gransam is " + str(granSam))
 	bundle.setAddress("granularSample")
 	bundle.append(granSam)
 	bundle.setAddress("granular")
@@ -107,7 +107,7 @@ def sendBlobsViaOsc(keypoints, amount, combination, color, frame_row, frame_colu
 		maxBBSize = 140
 		maxWBSize = 75
 	else:
-	 	maxBBSize = 1360
+		maxBBSize = 1360
 		maxWBSize = 700
 
 	if (color == 1):
