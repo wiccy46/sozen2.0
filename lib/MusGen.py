@@ -31,7 +31,7 @@ class MusGen(threading.Thread):
                 self.notes[self.baseNote - i - 1] = self.notes[self.baseNote - i ] - 1
             for i in range(self.baseNote + 1, 9):
                 self.notes[i] = self.notes[i - 1] + 1
-        print (self.notes)
+        print (self.notes) #.d.sads
 
 
     def stopit(self):
