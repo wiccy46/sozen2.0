@@ -1,5 +1,10 @@
 import numpy as np
 import threading, sys, time
+from pyo import *
+
+filename = "n0.wav"
+s = Server().boot()
+path = "/audio/sine" + filename
 
 class MusGen(threading.Thread):
     def __init__(self, zones):
@@ -31,6 +36,9 @@ class MusGen(threading.Thread):
                 self.notes[self.baseNote - i - 1] = self.notes[self.baseNote - i ] - 1
             for i in range(self.baseNote + 1, 9):
                 self.notes[i] = self.notes[i - 1] + 1
+
+
+        sf = SfPlayer(path, speed = [1, 1], loop = False,mul = 0.9 ).out()
         print (self.notes) #.d.sads
 
 
