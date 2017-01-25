@@ -1,10 +1,6 @@
 import numpy as np
-import threading, sys, time
-from pyo import *
-
-filename = "n0.wav"
-s = Server().boot()
-path = "/audio/sine" + filename
+import threading, sys, time, random
+from lib.OscPart import sc
 
 class MusGen(threading.Thread):
     def __init__(self, zones):
@@ -13,11 +9,23 @@ class MusGen(threading.Thread):
         self.baseNote = -1
         self._stop = threading.Event()
         self.notes = np.zeros(9)
+        self.play_start = False
 
+    def stop_play(self):
+        self.play_start = False
+
+    def rand_note(self):
+        note = random.randint(0, 8)
+        vel = random.randint(10, 100) / 100.0
+        sc(note, vel)
+
+    def rand_rythm(self):
+        return random.randint(100, 2000) / 1000.
 
     def run(self):
         # I should put the generative modal here.
         # Next step is try to play a sample note and see if it works. ..
+        self.play_start = True
         print (self.zones)
         self.baseNote =  np.argmax(self.zones)
         self.notes[self.baseNote] = 0
@@ -36,10 +44,13 @@ class MusGen(threading.Thread):
                 self.notes[self.baseNote - i - 1] = self.notes[self.baseNote - i ] - 1
             for i in range(self.baseNote + 1, 9):
                 self.notes[i] = self.notes[i - 1] + 1
-
-
-        sf = SfPlayer(path, speed = [1, 1], loop = False,mul = 0.9 ).out()
-        print (self.notes) #.d.sads
+        self.notes = self.notes + 8
+        print (self.notes)  # .d.sads
+        while(self.play_start):
+            print "play"
+            print self.play_start
+            self.rand_note()
+            time.sleep(self.rand_rythm())
 
 
     def stopit(self):

@@ -5,7 +5,8 @@ s.boot;
 (
 x = SynthDef("tutorial-PlayBuf",{ arg out = 0,  amp = 0.9,  bufnum;
     Out.ar( out,
-        amp * PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum))
+        amp * PlayBuf.ar(2, bufnum, BufRateScale.kr(bufnum))
+
     )
 });
 )

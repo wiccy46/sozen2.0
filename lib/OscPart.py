@@ -4,6 +4,18 @@ OSC Conmmunication
 import OSC
 import numpy as np
 
+SC_ADD = 57120
+SELF_ADD = '127.0.0.1'
+
+def sc(idx = 8, amp = 0.9):
+    sc_add = (SELF_ADD, SC_ADD)
+    sc_client = OSC.OSCClient()
+    sc_client.connect(sc_add)
+    bundle = OSC.OSCBundle()
+    bundle.setAddress('/choice')
+    bundle.append((idx, amp))
+    sc_client.send(bundle)
+
 def closeup():
 	send_address = ('127.0.0.1', 9003)
 	close_client = OSC.OSCClient()

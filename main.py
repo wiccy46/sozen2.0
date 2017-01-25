@@ -13,7 +13,8 @@ Module required: OpenCV2, Numpy, matplotlib, PyOSC, pyserial
 Subfiles: oscPart, stones, sands
 
 Based on choice (1:2), the program can process either webcam image or saved image files. During the camera
-extraction, the feature extraction functions are not ran constantly. Instead, the program takes a snapshot
+extraction, the feat
+Based on choice (1:2), the program can process either webcam image or saved image files. During the camerure extraction functions are not ran constantly. Instead, the program takes a snapshot
 everytime the user removes the hand from the captured area based on the frame differences. 
 
 At the beginning of the program, one shall crop the image (both webcam and file) by choosing the 4 corner of the 
@@ -29,6 +30,7 @@ from PyQt4 import QtGui, QtCore
 import lib.Stones
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 from lib.MusGen import MusGen
+
 
 # Sakura: Only parameter you might need: 
 cameraChoice = 0
@@ -139,12 +141,14 @@ class Capture():
     def endCapture(self):
         print ("end")
         self.capturing = False
+        self.music.stop_play()
         self.music.stopit()
 
     def quitCapture(self):
         cap = self.c
         self.capturing = False
         cv2.destroyAllWindows()
+        self.music.stop_play()
         self.music.stopit()
         cap.release()
         QtCore.QCoreApplication.quit()
