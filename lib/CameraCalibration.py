@@ -1,11 +1,11 @@
 # Image Gradients, edges
 import cv2
 import numpy as np
-import matplotlib
-matplotlib.use('Qt4Agg')
+# Maybe put a system detection. Use the new backend if PC. Else nothing change.
+# import matplotlib
+# matplotlib.use('Qt4Agg')
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
-
 
 
 def calibrate(inputImage, clb_pts):
@@ -19,7 +19,6 @@ def calibrate(inputImage, clb_pts):
 		[clb_pts[1,0], clb_pts[1,1]], \
 		[clb_pts[2,0], clb_pts[2,1] ],\
 		[clb_pts[3,0], clb_pts[3,1] ]])
-
 	pts2 = np.float32(
 		[
 		[0, 0], [0 , column],[row, 0], [row, column]

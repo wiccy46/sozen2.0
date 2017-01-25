@@ -141,15 +141,21 @@ class Capture():
     def endCapture(self):
         print ("end")
         self.capturing = False
-        self.music.stop_play()
-        self.music.stopit()
+        try:
+            self.music.stop_play()
+            self.music.stopit()
+        except AttributeError:
+            pass
 
     def quitCapture(self):
         cap = self.c
         self.capturing = False
         cv2.destroyAllWindows()
-        self.music.stop_play()
-        self.music.stopit()
+        try:
+            self.music.stop_play()
+            self.music.stopit()
+        except AttributeError:
+            pass
         cap.release()
         QtCore.QCoreApplication.quit()
 

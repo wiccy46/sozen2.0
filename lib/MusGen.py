@@ -2,6 +2,9 @@ import numpy as np
 import threading, sys, time, random
 from lib.OscPart import sc
 
+EP = 1 / 9 # The equal probablity of the 9 grid.
+
+
 class MusGen(threading.Thread):
     def __init__(self, zones):
         threading.Thread.__init__(self)
@@ -10,6 +13,7 @@ class MusGen(threading.Thread):
         self._stop = threading.Event()
         self.notes = np.zeros(9)
         self.play_start = False
+        self.bpm = 80
 
     def stop_play(self):
         self.play_start = False
