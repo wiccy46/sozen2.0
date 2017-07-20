@@ -33,7 +33,7 @@ from lib.MusGen import MusGen
 
 
 # Sakura: Only parameter you might need: 
-cameraChoice = 0
+cameraChoice = 1
 
 # Important to choice the right mode
 # 1: Camera, 2: stillImages
@@ -106,6 +106,7 @@ class Capture():
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
                                                 self.threshold_black,  row, column)
 
+                        # Needs to put a mode selection: soundscapes, music, 
                         self.music = MusGen(self.blob_zones)
                         self.music.start()
 
@@ -217,7 +218,7 @@ class Window(QtGui.QWidget):
             self.capture.changeBt(value)
 
 # The first step is to get the calibration coordinates
-calibration_pts = getCalibrationCoordinates()
+calibration_pts = getCalibrationCoordinates(cameraChoice)
 
 def main():
     app = QtGui.QApplication(sys.argv)

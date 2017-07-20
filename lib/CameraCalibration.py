@@ -33,8 +33,8 @@ def calibrate(inputImage, clb_pts):
 	calibrated_img=cv2.flip(calibrated_img,1)
 	return calibrated_img
 
-def getCalibrationCoordinates():
-	cap = cv2.VideoCapture(0)
+def getCalibrationCoordinates(choice):
+	cap = cv2.VideoCapture(choice)
 	ret, original_img = cap.read()
 	original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
 	# Left and now is wrongly flip.

@@ -11,6 +11,8 @@ x = SynthDef("tutorial-PlayBuf",{ arg out = 0,  amp = 0.9,  bufnum;
 });
 )
 
+// 0 ~ 16
+~b[8]
 x.play(s,[\amp, 0.9, \bufnum, ~b[2]]);
 
 (
