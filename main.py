@@ -23,7 +23,6 @@ intended area. The user shall start from the top left corner --> top right --> b
 The python part only manage feature extraction, the Soundscape is generated/triggered entirely on the PureData. 
 For information about the Soundscape, please refers to the PD patches. 
 """
-
 import cv2, sys, time
 import numpy as np
 from PyQt4 import QtGui, QtCore
@@ -31,9 +30,11 @@ import lib.Stones
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 from lib.MusGen import MusGen
 
+global calibration_pts
+
 
 # Sakura: Only parameter you might need: 
-cameraChoice = 1
+cameraChoice = 0
 
 # Important to choice the right mode
 # 1: Camera, 2: stillImages
@@ -45,15 +46,17 @@ ratio  = 2
 fontSize = 2
 
 
+
 class Capture():
-    def __init__(self):
-        global  calibration_pts
+    def __init__(self,calibration_pts):
+        
         self.capturing = False
         self.cameraChoice = 0
-        self.c = cv2.VideoCapture(cameraChoice)
+        #self.c = cv2.VideoCapture(cameraChoice)
         self.textColor = 255
         self.initBrightness = 40
         self.calibration_pts = calibration_pts
+        print calibration_pts
         self.threshold_black = 183
 
     def changeCamera(self, choice):
@@ -65,6 +68,7 @@ class Capture():
 
     def startCapture(self):
         self.capturing = True
+        self.c=cv2.VideoCapture(cameraChoice)
         ret, original_frame = self.c.read()
         original_frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
         # Left and now is wrongly flip.
@@ -140,7 +144,7 @@ class Capture():
             cv2.waitKey(400)
 
     def endCapture(self):
-        print ("end")
+        print ("Stop")
         self.capturing = False
         try:
             self.music.stop_play()
@@ -149,6 +153,7 @@ class Capture():
             pass
 
     def quitCapture(self):
+    	print "inside quit capture"
         cap = self.c
         self.capturing = False
         cv2.destroyAllWindows()
@@ -163,9 +168,8 @@ class Capture():
 class Window(QtGui.QWidget):
     def __init__(self):
         super(Window, self).__init__()
-        self.capture = Capture()
         self.setWindowTitle('SoZen v2.0')
-
+        self.capture=0
         self.camera_choice_box = QtGui.QSpinBox()
         self.camera_choice_box.setValue(0)
         self.camera_choice_box.setRange(0, 4)
@@ -174,16 +178,22 @@ class Window(QtGui.QWidget):
         self.camera_choice_box.valueChanged[int].connect(self.changeValue)
         self.camera_choice_laybel = QtGui.QLabel('Camera')
         self.camera_choice_laybel.setFixedSize(50, 20)
-
+        #self.capture = 0
 
         self.start_button = QtGui.QPushButton('Start', self)
-        self.start_button.clicked.connect(self.capture.startCapture)
+        self.start_button.setCheckable(True)
+        self.start_button.clicked.connect(self.startButton)
+        
+        	
+        	
 
-        self.end_button = QtGui.QPushButton('End', self)
-        self.end_button.clicked.connect(self.capture.endCapture)
+        self.end_button = QtGui.QPushButton('Stop', self)
+        self.end_button.setCheckable(True)
+        self.end_button.clicked.connect(self.endButton)
 
         self.quit_button = QtGui.QPushButton('Quit', self)
-        self.quit_button.clicked.connect(self.capture.quitCapture)
+        self.quit_button.setCheckable(True)
+        self.quit_button.clicked.connect(self.quitButton)
 
         lbox = QtGui.QGridLayout(self)
         lbox.addWidget(self.start_button, 1,0, 1,1)
@@ -209,7 +219,26 @@ class Window(QtGui.QWidget):
         self.setLayout(lbox)
         self.setGeometry(100, 100, 400, 400)
         self.show()
-
+    def startButton(self):
+    	if(self.start_button.isChecked()):
+    		calibration_pts = getCalibrationCoordinates(cameraChoice)
+        	if(calibration_pts.any()):
+        		self.capture = Capture(calibration_pts)
+        		print self.capture
+        		self.capture.startCapture()
+    def endButton(self):
+    	if(self.end_button.isChecked()):
+    		if(self.capture == 0):
+    			QtCore.QCoreApplication.quit()
+    		else:
+    			self.capture.endCapture()
+    def quitButton(self):
+    	if(self.quit_button.isChecked()):
+    		print self.capture
+    		if(self.capture == 0):
+    			QtCore.QCoreApplication.quit()
+    		else:
+    			self.capture.quitCapture()
     def changeValue(self, value):
         if self.sender() == self.camera_choice_box:
             self.capture.changeCamera(value)
@@ -217,13 +246,11 @@ class Window(QtGui.QWidget):
         elif self.sender() == self.bt_slider:
             self.capture.changeBt(value)
 
-# The first step is to get the calibration coordinates
-calibration_pts = getCalibrationCoordinates(cameraChoice)
 
 def main():
-    app = QtGui.QApplication(sys.argv)
-    sozen = Window()
-    sys.exit(app.exec_())
-
+	#calibration_pts = getCalibrationCoordinates(cameraChoice)
+	app = QtGui.QApplication(sys.argv)
+	sozen = Window()
+	sys.exit(app.exec_())
 if __name__ == '__main__':
     main()
