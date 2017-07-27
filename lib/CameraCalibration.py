@@ -2,8 +2,9 @@
 import cv2
 import numpy as np
 # Maybe put a system detection. Use the new backend if PC. Else nothing change.
-# import matplotlib
-# matplotlib.use('Qt4Agg')
+import matplotlib
+
+matplotlib.use('Qt4Agg')
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 
@@ -40,10 +41,12 @@ def getCalibrationCoordinates(choice):
 	# Left and now is wrongly flip.
 	original_img = cv2.flip(original_img, 0); original_img = cv2.flip(original_img, 1)
 	fig = plt.figure(1, figsize = (10, 10))
-	plt.gca().imshow(original_img, cmap = cm.Greys_r), plt.title('Click on 4 corners to calibrate.')
+	plt.gca().imshow(original_img, cmap = cm.Greys_r),plt.title('Click on 4 corners to calibrate.')
 	pts = np.asarray(plt.ginput(4))
+	print pts
 	if len(pts) == 4:
 		plt.close()
+
 	pts = pts.astype(int)
 	return pts
 
