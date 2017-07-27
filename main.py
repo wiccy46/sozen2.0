@@ -31,7 +31,9 @@ For information about the Soundscape, please refers to the PD patches.
 import cv2, sys, time
 import numpy as np
 from PyQt4 import QtGui, QtCore
-import lib.Stones
+import lib.Stones, lib.DevMode
+
+
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 from lib.MusGen import MusGen
 import matplotlib.pyplot as plt
@@ -42,7 +44,7 @@ cameraChoice = 0
 
 # Important to choice the right mode
 # 1: Camera, 2: stillImages
-choice = 1
+choice = lib.DevMode.devChoice()
 # 0: Dark, 1: Normal, 2: Bright
 labLighting = 2
 
