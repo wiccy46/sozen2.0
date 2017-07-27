@@ -29,7 +29,7 @@ from PyQt4 import QtGui, QtCore
 import lib.Stones
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 from lib.MusGen import MusGen
-
+import matplotlib.pyplot as plt
 global calibration_pts
 
 
@@ -106,7 +106,18 @@ class Capture():
                         frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
                         frame = calibrate(frame, self.calibration_pts)
                         row,column = np.shape(frame)[0], np.shape(frame)[1]
+                        mean_value = np.mean(frame,axis=1)
+                        #x = np.random.normal(size = 1000)
+                        checkThreshold = np.mean(mean_value) + 0.3* np.mean(mean_value)
+                        print "Check threshold value "
+                        print checkThreshold
 
+                        plt.hist(mean_value,  bins=30)
+                        plt.ylabel('Range')
+                        plt.show()
+                        #plt.hist(hist)
+                        #plt.title("Histogram for automatic threshold selection")
+                        #plt.show();
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
                                                 self.threshold_black,  row, column)
 
