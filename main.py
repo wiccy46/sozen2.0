@@ -23,6 +23,11 @@ intended area. The user shall start from the top left corner --> top right --> b
 The python part only manage feature extraction, the Soundscape is generated/triggered entirely on the PureData. 
 For information about the Soundscape, please refers to the PD patches. 
 """
+
+
+# This is the sound development branch. 
+
+
 import cv2, sys, time
 import numpy as np
 from PyQt4 import QtGui, QtCore
