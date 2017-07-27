@@ -92,6 +92,7 @@ class Capture():
             frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
             frame = calibrate(frame, self.calibration_pts)
 
+
             try:
                 diff = cv2.absdiff(frame, previous_frame)
                 mean_diff = float(np.mean(diff))
