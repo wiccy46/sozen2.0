@@ -22,6 +22,9 @@ intended area. The user shall start from the top left corner --> top right --> b
 
 The python part only manage feature extraction, the Soundscape is generated/triggered entirely on the PureData. 
 For information about the Soundscape, please refers to the PD patches. 
+
+
+
 """
 import cv2, sys, time
 import numpy as np
@@ -105,7 +108,7 @@ class Capture():
                         frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
                         frame = calibrate(frame, self.calibration_pts)
                         row,column = np.shape(frame)[0], np.shape(frame)[1]
-
+                        print np.mean(frame)
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
                                                 self.threshold_black,  row, column)
 
