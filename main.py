@@ -33,7 +33,6 @@ import matplotlib.pyplot as plt
 global calibration_pts
 
 
-# Sakura: Only parameter you might need: 
 cameraChoice = 0
 
 # Important to choice the right mode
@@ -178,6 +177,7 @@ class Capture():
 
 class Window(QtGui.QWidget):
     def __init__(self):
+
         super(Window, self).__init__()
         self.setWindowTitle('SoZen v2.0')
         self.capture=0
@@ -257,6 +257,8 @@ class Window(QtGui.QWidget):
         elif self.sender() == self.bt_slider:
             self.capture.changeBt(value)
 
+
+# calibration_pts = getCalibrationCoordinates(cameraChoice)
 
 def main():
 	#calibration_pts = getCalibrationCoordinates(cameraChoice)
