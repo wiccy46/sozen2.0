@@ -108,6 +108,7 @@ class Capture():
                         frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
                         frame = calibrate(frame, self.calibration_pts)
                         row,column = np.shape(frame)[0], np.shape(frame)[1]
+<<<<<<< HEAD
                         mean_value = np.mean(frame,axis=1)
                         #x = np.random.normal(size = 1000)
                         checkThreshold = np.mean(mean_value) + 0.3* np.mean(mean_value)
@@ -120,7 +121,9 @@ class Capture():
                         #plt.hist(hist)
                         #plt.title("Histogram for automatic threshold selection")
                         #plt.show();
+=======
                         print np.mean(frame)
+>>>>>>> akhil
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
                                                 self.threshold_black,  row, column)
 
