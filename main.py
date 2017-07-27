@@ -33,7 +33,7 @@ from lib.MusGen import MusGen
 
 
 # Sakura: Only parameter you might need: 
-cameraChoice = 1
+cameraChoice = 0
 
 # Important to choice the right mode
 # 1: Camera, 2: stillImages
@@ -47,13 +47,13 @@ fontSize = 2
 
 class Capture():
     def __init__(self):
-        global  calibration_pts
+        # global  calibration_pts
         self.capturing = False
         self.cameraChoice = 0
         self.c = cv2.VideoCapture(cameraChoice)
         self.textColor = 255
         self.initBrightness = 40
-        self.calibration_pts = calibration_pts
+        # self.calibration_pts = calibration_pts
         self.threshold_black = 183
 
     def changeCamera(self, choice):
@@ -65,6 +65,8 @@ class Capture():
 
     def startCapture(self):
         self.capturing = True
+        self.calibration_pts = getCalibrationCoordinates(cameraChoice)
+        print "after getCal"
         ret, original_frame = self.c.read()
         original_frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
         # Left and now is wrongly flip.
@@ -162,7 +164,11 @@ class Capture():
 
 class Window(QtGui.QWidget):
     def __init__(self):
+
         super(Window, self).__init__()
+
+
+
         self.capture = Capture()
         self.setWindowTitle('SoZen v2.0')
 
@@ -218,7 +224,8 @@ class Window(QtGui.QWidget):
             self.capture.changeBt(value)
 
 # The first step is to get the calibration coordinates
-calibration_pts = getCalibrationCoordinates(cameraChoice)
+
+# calibration_pts = getCalibrationCoordinates(cameraChoice)
 
 def main():
     app = QtGui.QApplication(sys.argv)
