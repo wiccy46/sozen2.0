@@ -25,9 +25,6 @@ For information about the Soundscape, please refers to the PD patches.
 """
 
 
-# This is the sound development branch. 
-
-
 import cv2, sys, time
 import numpy as np
 from PyQt4 import QtGui, QtCore
