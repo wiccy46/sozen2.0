@@ -71,8 +71,6 @@ class Capture():
         f = cv2.flip(original_frame, 0)
         return cv2.flip(original_frame, 1)
 
-
-
     def startCapture(self):
         self.capturing = True
         self.c=cv2.VideoCapture(cameraChoice)
@@ -100,34 +98,29 @@ class Capture():
                         # Take a snap shot
                         time.sleep(self.snapshot_time_gap) # wait a bit
                         ret, frame = self.c.read()
-                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                        # Left and now is wrongly flip.
-                        frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
-                        frame = calibrate(frame, self.calibration_pts)
+                        frame = self.frame_adjust(frame)
                         row,column = np.shape(frame)[0], np.shape(frame)[1]
-                        #mean_value = np.mean(frame,axis=1)
-                        #x = np.random.normal(size = 1000)
                         checkThreshold = np.mean(frame) + 0.3* np.mean(frame)
                         print "Check threshold value "
                         print checkThreshold
                         self.threshold_black=checkThreshold
 
-                        plt.hist(frame)
-                        plt.title("Histogram for automatic threshold selection")
-                        plt.show();
+                        # plt.hist(frame)
+                        # plt.title("Histogram for automatic threshold selection")
+                        # plt.show();
                         print np.mean(frame)
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
                                                 self.threshold_black,  row, column)
-
-                        # Needs to put a mode selection: soundscapes, music, 
-                        self.music = MusGen(self.blob_zones)
-                        self.music.start()
-
 
                         # Extract blob coordinates
                         self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
                         # Return the diameter of the blob.
                         self.bblob_sizes = lib.Stones.findSize(self.keypoints)
+
+
+                        # Needs to put a mode selection: soundscapes, music, 
+                        self.music = MusGen(self.blob_zones)
+                        self.music.start()
                         # Draw circles for blob
                         frame = cv2.drawKeypoints(frame, self.keypoints, np.array([]), (0, 255, 0),
                                                 cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
