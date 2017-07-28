@@ -32,8 +32,6 @@ import cv2, sys, time
 import numpy as np
 from PyQt4 import QtGui, QtCore
 import lib.Stones, lib.DevMode
-
-
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 from lib.MusGen import MusGen
 import matplotlib.pyplot as plt
@@ -41,28 +39,24 @@ global calibration_pts
 
 
 cameraChoice = 0
-
-# Important to choice the right mode
-# 1: Camera, 2: stillImages
 choice = lib.DevMode.devChoice()
-# 0: Dark, 1: Normal, 2: Bright
-labLighting = 2
-
-ratio  = 2
-fontSize = 2
 
 
 
 class Capture():
-    def __init__(self,calibration_pts):
-        self.capturing = False
+
+    def __init__(self,calibration_pts):        
+        self.capturing = False  # Flag for frame difference capture. 
         self.cameraChoice = 0
         #self.c = cv2.VideoCapture(cameraChoice)
         self.textColor = 255
         self.initBrightness = 40
         self.calibration_pts = calibration_pts
-        print calibration_pts
         self.threshold_black = 183
+        self.snap_thres = 8.0  # the mean difference value which allows snapshot to be taken. 
+        self.just_snapped = False
+        self.snapshot_flag = False
+        self.snapshot_time_gap = 1.5  # Wait certain second before actually taking the shot. 
 
     def changeCamera(self, choice):
         cameraChoice = choice
@@ -71,25 +65,24 @@ class Capture():
     def changeBt(self, val):
         self.threshold_black = val
 
+
+    def frame_adjust(self, f):
+        f = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
+        # Left and now is wrongly flip.
+        f = cv2.flip(original_frame, 0)
+        return cv2.flip(original_frame, 1)
+
     def startCapture(self):
         self.capturing = True
         self.c=cv2.VideoCapture(cameraChoice)
-        ret, original_frame = self.c.read()
-        original_frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
-        # Left and now is wrongly flip.
-        original_frame = cv2.flip(original_frame, 0)
-        original_frame = cv2.flip(original_frame, 1)
-        snap_thres = 8.0
+        rubbish, original_frame = self.c.read()  # ret is useless
+        original_frame = self.frame_adjust(original_frame)
         previous_frame = np.array([])
         self.just_snapped = False
         self.snapshot_flag = False
-
         while(self.capturing):
             ret, frame = self.c.read()
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            # Left and now is wrongly flip.
-            frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
-            frame = calibrate(frame, self.calibration_pts)
+            frame = self.frame_adjust(frame)
             try:
                 diff = cv2.absdiff(frame, previous_frame)
                 mean_diff = float(np.mean(diff))
@@ -98,41 +91,38 @@ class Capture():
                     self.just_snapped = False
 
                 try:
-                    if(self.snapshot_flag == False) & (mean_diff > snap_thres):
+                    if(self.snapshot_flag == False) & (mean_diff > self.snap_thres):
                         print ("Mean Diff: " + str(mean_diff))
                         self.snapshot_flag = True
-                    elif(self.snapshot_flag == True) & (mean_diff < snap_thres):
-                        # Take a snap shot
-                        time.sleep(1.5)
-                        ret, frame = self.c.read()
-                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                        # Left and now is wrongly flip.
-                        frame = cv2.flip(frame, 0); frame = cv2.flip(frame, 1)
-                        frame = calibrate(frame, self.calibration_pts)
-                        row,column = np.shape(frame)[0], np.shape(frame)[1]
-                        #mean_value = np.mean(frame,axis=1)
-                        #x = np.random.normal(size = 1000)
-                        checkThreshold = np.mean(frame) + (self.threshold_black/100)* np.mean(frame)
-                        print "Threshold black percentage "
-                        print threshold_black
-                        self.threshold_black_val=checkThreshold
+                    elif(self.snapshot_flag == True) & (mean_diff < self.snap_thres):
 
-                        plt.hist(frame)
-                        plt.title("Histogram for automatic threshold selection")
-                        plt.show();
+                        # Take a snap shot
+                        time.sleep(self.snapshot_time_gap) # wait a bit
+                        ret, frame = self.c.read()
+                        frame = self.frame_adjust(frame)
+                        row,column = np.shape(frame)[0], np.shape(frame)[1]
+
+                        checkThreshold = np.mean(frame) + 0.3* np.mean(frame)
+                        print "Check threshold value "
+                        print checkThreshold
+                        self.threshold_black=checkThreshold
+
+                        # plt.hist(frame)
+                        # plt.title("Histogram for automatic threshold selection")
+                        # plt.show();
                         print np.mean(frame)
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
                                                 self.threshold_black_val,  row, column)
-
-                        # Needs to put a mode selection: soundscapes, music, 
-                        self.music = MusGen(self.blob_zones)
-                        self.music.start()
-
 
                         # Extract blob coordinates
                         self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
                         # Return the diameter of the blob.
                         self.bblob_sizes = lib.Stones.findSize(self.keypoints)
+
+
+                        # Needs to put a mode selection: soundscapes, music, 
+                        self.music = MusGen(self.blob_zones)
+                        self.music.start()
                         # Draw circles for blob
                         frame = cv2.drawKeypoints(frame, self.keypoints, np.array([]), (0, 255, 0),
                                                 cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
@@ -144,7 +134,7 @@ class Capture():
                         self.snapshot_flag = False
                         self.just_snapped = True
 
-                    elif (self.snapshot_flag == True) & (mean_diff > snap_thres):
+                    elif (self.snapshot_flag == True) & (mean_diff > self.snap_thres):
                         pass
                     else:
                         pass
