@@ -44,6 +44,7 @@ choice = lib.DevMode.devChoice()
 
 
 class Capture():
+
     def __init__(self,calibration_pts):        
         self.capturing = False  # Flag for frame difference capture. 
         self.cameraChoice = 0
@@ -101,6 +102,7 @@ class Capture():
                         ret, frame = self.c.read()
                         frame = self.frame_adjust(frame)
                         row,column = np.shape(frame)[0], np.shape(frame)[1]
+
                         checkThreshold = np.mean(frame) + 0.3* np.mean(frame)
                         print "Check threshold value "
                         print checkThreshold
@@ -111,7 +113,9 @@ class Capture():
                         # plt.show();
                         print np.mean(frame)
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
-                                                self.threshold_black,  row, column)
+
+                                                self.threshold_black_val,  row, column)
+
                         # Extract blob coordinates
                         self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
                         # Return the diameter of the blob.
@@ -182,7 +186,7 @@ class Window(QtGui.QWidget):
         self.camera_choice_laybel = QtGui.QLabel('Camera')
         self.camera_choice_laybel.setFixedSize(50, 20)
         #self.capture = 0
-
+        self.thresholdPercent = 30
         self.start_button = QtGui.QPushButton('Start', self)
         self.start_button.setCheckable(True)
         self.start_button.clicked.connect(self.startButton)
@@ -204,11 +208,11 @@ class Window(QtGui.QWidget):
         lbox.addWidget(self.quit_button, 3, 0, 3, 1)
         lbox.addWidget(self.camera_choice_laybel, 5, 0)
         lbox.addWidget(self.camera_choice_box, 5, 1)
-        # self.bt_laybel = QtGui.QLabel('Blob Threshold')
-        # self.bt_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
-        # self.bt_slider.setRange(0, 255)
-        # self.bt_slider.setValue(183) # Need to change here.
-        # self.bt_slider.valueChanged[int].connect(self.changeValue)
+        self.bt_laybel = QtGui.QLabel('Blob Threshold')
+        self.bt_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.bt_slider.setRange(0, 100)
+        self.bt_slider.setValue(30) # Need to change here.
+        self.bt_slider.valueChanged(int).connect(self.changeValue)
         #
         #
         # rbox = QtGui.QGridLayout(self)
