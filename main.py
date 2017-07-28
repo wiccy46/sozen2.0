@@ -66,10 +66,11 @@ class Capture():
 
 
     def frame_adjust(self, f):
-        f = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
+        f = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
         # Left and now is wrongly flip.
-        f = cv2.flip(original_frame, 0)
-        return cv2.flip(original_frame, 1)
+        f = cv2.flip(f, 0)
+        f = cv2.flip(f, 1)
+        return calibrate(f, self.calibration_pts)
 
     def startCapture(self):
         self.capturing = True
@@ -111,7 +112,6 @@ class Capture():
                         print np.mean(frame)
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
                                                 self.threshold_black,  row, column)
-
                         # Extract blob coordinates
                         self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
                         # Return the diameter of the blob.
