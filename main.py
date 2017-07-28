@@ -179,30 +179,43 @@ class Window(QtGui.QWidget):
         self.thresholdPercent = 30
         self.start_button = QtGui.QPushButton('Start', self)
         self.start_button.setCheckable(True)
+        self.start_button.setFixedWidth(250)
         self.start_button.clicked.connect(self.startButton)
-        self.thresholdPercent = 30;
         	
         	
 
         self.end_button = QtGui.QPushButton('Stop', self)
         self.end_button.setCheckable(True)
+        self.end_button.setFixedWidth(250)
         self.end_button.clicked.connect(self.endButton)
 
         self.quit_button = QtGui.QPushButton('Quit', self)
         self.quit_button.setCheckable(True)
+        self.quit_button.setFixedWidth(250)
         self.quit_button.clicked.connect(self.quitButton)
 
-        lbox = QtGui.QGridLayout(self)
-        lbox.addWidget(self.start_button, 1,0, 1,1)
-        lbox.addWidget(self.end_button, 2, 0, 2, 1)
-        lbox.addWidget(self.quit_button, 3, 0, 3, 1)
-        lbox.addWidget(self.camera_choice_laybel, 5, 0)
-        lbox.addWidget(self.camera_choice_box, 5, 1)
         self.bt_laybel = QtGui.QLabel('Blob Threshold')
+        self.bt_laybel.setFixedSize(90, 20)
         self.bt_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.bt_laybel.setAlignment(QtCore.Qt.AlignCenter)
         self.bt_slider.setRange(0, 100)
         self.bt_slider.setValue(30) # Need to change here.
         self.bt_slider.valueChanged[int].connect(self.changeValue)
+        self.bt_slider.setFixedSize(100,20)
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(self.bt_laybel)
+        hbox.addWidget(self.bt_slider)
+        hboxCamera = QtGui.QHBoxLayout()
+        hboxCamera.addWidget(self.camera_choice_laybel)
+        hboxCamera.addWidget(self.camera_choice_box)
+        
+        lbox = QtGui.QVBoxLayout(self)
+        
+        lbox.addWidget(self.start_button)
+        lbox.addWidget(self.end_button)
+        lbox.addWidget(self.quit_button)
+        lbox.addLayout(hbox)
+        lbox.addLayout(hboxCamera)
         #
         #
         # rbox = QtGui.QGridLayout(self)
@@ -214,7 +227,7 @@ class Window(QtGui.QWidget):
         # box.addLayout(lbox)
         # box.addLayout(rbox)
         self.setLayout(lbox)
-        self.setGeometry(100, 100, 400, 400)
+        self.setFixedSize(300, 300)
         self.show()
     def startButton(self):
     	if(self.start_button.isChecked()):
