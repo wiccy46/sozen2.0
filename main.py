@@ -52,12 +52,12 @@ class Capture():
         self.textColor = 255
         self.initBrightness = 40
         self.calibration_pts = calibration_pts
-        self.threshold_black = 183
+        self.threshold_black = 30
         self.snap_thres = 8.0  # the mean difference value which allows snapshot to be taken. 
         self.just_snapped = False
         self.snapshot_flag = False
         self.snapshot_time_gap = 1.5  # Wait certain second before actually taking the shot. 
-
+        self.threshold_black_val = 0
     def changeCamera(self, choice):
         cameraChoice = choice
         self.c = cv2.VideoCapture(cameraChoice)
@@ -67,10 +67,10 @@ class Capture():
 
 
     def frame_adjust(self, f):
-        f = cv2.cvtColor(original_frame, cv2.COLOR_BGR2GRAY)
+        f = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
         # Left and now is wrongly flip.
-        f = cv2.flip(original_frame, 0)
-        return cv2.flip(original_frame, 1)
+        f = cv2.flip(f, 0)
+        return cv2.flip(f, 1)
 
     def startCapture(self):
         self.capturing = True
@@ -210,7 +210,7 @@ class Window(QtGui.QWidget):
         self.bt_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.bt_slider.setRange(0, 100)
         self.bt_slider.setValue(30) # Need to change here.
-        self.bt_slider.valueChanged(int).connect(self.changeValue)
+        self.bt_slider.valueChanged[int].connect(self.changeValue)
         #
         #
         # rbox = QtGui.QGridLayout(self)
@@ -249,7 +249,8 @@ class Window(QtGui.QWidget):
             self.capture.changeCamera(value)
 
         elif self.sender() == self.bt_slider:
-            self.capture.changeBt(value)
+            if(self.capture != 0):
+                self.capture.changeBt(value)
 
 
 # calibration_pts = getCalibrationCoordinates(cameraChoice)
