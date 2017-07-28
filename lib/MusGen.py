@@ -4,7 +4,6 @@ from lib.OscPart import sc
 
 EP = 1 / 9 # The equal probablity of the 9 grid.
 
-
 class MusGen(threading.Thread):
     def __init__(self, zones):
         threading.Thread.__init__(self)

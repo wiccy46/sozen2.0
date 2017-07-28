@@ -44,33 +44,32 @@ choice = lib.DevMode.devChoice()
 
 
 class Capture():
-
-    def __init__(self,calibration_pts,black_val_percent):        
+    def __init__(self,calibration_pts):        
         self.capturing = False  # Flag for frame difference capture. 
         self.cameraChoice = 0
         #self.c = cv2.VideoCapture(cameraChoice)
         self.textColor = 255
         self.initBrightness = 40
         self.calibration_pts = calibration_pts
-        self.threshold_black = black_val_percent
+        self.threshold_black = 183
         self.snap_thres = 8.0  # the mean difference value which allows snapshot to be taken. 
         self.just_snapped = False
         self.snapshot_flag = False
         self.snapshot_time_gap = 1.5  # Wait certain second before actually taking the shot. 
-        self.threshold_black_val = 0
+
     def changeCamera(self, choice):
         cameraChoice = choice
         self.c = cv2.VideoCapture(cameraChoice)
 
-    
+    def changeBt(self, val):
+        self.threshold_black = val
+
 
     def frame_adjust(self, f):
         f = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
         # Left and now is wrongly flip.
         f = cv2.flip(f, 0)
-
-        f = cv2.flip(f, 1)
-        return calibrate(f, self.calibration_pts)
+        return cv2.flip(f, 1)
 
     def startCapture(self):
         self.capturing = True
@@ -101,11 +100,17 @@ class Capture():
                         ret, frame = self.c.read()
                         frame = self.frame_adjust(frame)
                         row,column = np.shape(frame)[0], np.shape(frame)[1]
-                        mean_value= np.mean(frame)
-                        self.threshold_black_val = mean_value + (self.threshold_black/100)* mean_value
-                        self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
-                                        self.threshold_black_val,  row, column)
+                        checkThreshold = np.mean(frame) + 0.3* np.mean(frame)
+                        print "Check threshold value "
+                        print checkThreshold
+                        self.threshold_black=checkThreshold
 
+                        # plt.hist(frame)
+                        # plt.title("Histogram for automatic threshold selection")
+                        # plt.show();
+                        print np.mean(frame)
+                        self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
+                                                self.threshold_black,  row, column)
                         # Extract blob coordinates
                         self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
                         # Return the diameter of the blob.
@@ -163,7 +168,6 @@ class Capture():
 
 class Window(QtGui.QWidget):
     def __init__(self):
-
         super(Window, self).__init__()
         self.setWindowTitle('SoZen v2.0')
         self.capture=0
@@ -176,11 +180,10 @@ class Window(QtGui.QWidget):
         self.camera_choice_laybel = QtGui.QLabel('Camera')
         self.camera_choice_laybel.setFixedSize(50, 20)
         #self.capture = 0
-        self.thresholdPercent = 30
         self.start_button = QtGui.QPushButton('Start', self)
         self.start_button.setCheckable(True)
         self.start_button.clicked.connect(self.startButton)
-        self.thresholdPercent = 30;
+        
         	
         	
 
@@ -198,11 +201,11 @@ class Window(QtGui.QWidget):
         lbox.addWidget(self.quit_button, 3, 0, 3, 1)
         lbox.addWidget(self.camera_choice_laybel, 5, 0)
         lbox.addWidget(self.camera_choice_box, 5, 1)
-        self.bt_laybel = QtGui.QLabel('Blob Threshold')
-        self.bt_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
-        self.bt_slider.setRange(0, 100)
-        self.bt_slider.setValue(30) # Need to change here.
-        self.bt_slider.valueChanged[int].connect(self.changeValue)
+        # self.bt_laybel = QtGui.QLabel('Blob Threshold')
+        # self.bt_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        # self.bt_slider.setRange(0, 255)
+        # self.bt_slider.setValue(183) # Need to change here.
+        # self.bt_slider.valueChanged[int].connect(self.changeValue)
         #
         #
         # rbox = QtGui.QGridLayout(self)
@@ -220,7 +223,8 @@ class Window(QtGui.QWidget):
     	if(self.start_button.isChecked()):
     		calibration_pts = getCalibrationCoordinates(cameraChoice)
         	if(calibration_pts.any()):
-        		self.capture = Capture(calibration_pts,self.thresholdPercent)
+        		self.capture = Capture(calibration_pts)
+        		print self.capture
         		self.capture.startCapture()
     def endButton(self):
     	if(self.end_button.isChecked()):
@@ -240,7 +244,7 @@ class Window(QtGui.QWidget):
             self.capture.changeCamera(value)
 
         elif self.sender() == self.bt_slider:
-            self.thresholdPercent = value
+            self.capture.changeBt(value)
 
 
 # calibration_pts = getCalibrationCoordinates(cameraChoice)
