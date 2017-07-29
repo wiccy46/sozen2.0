@@ -1,7 +1,7 @@
 
 
 
-import cv2, sys, time
+import cv2, sys, time, os
 import numpy as np
 from PyQt4 import QtGui, QtCore
 import lib.Stones, lib.DevMode
@@ -9,19 +9,25 @@ from lib.CameraCalibration import getCalibrationCoordinates, calibrate
 from lib.MusGen import MusGen
 import matplotlib.pyplot as plt
 global calibration_pts
+import matplotlib.cm as cm
 
-
+cameraChoice = 0
 choice = lib.DevMode.devChoice()
 os.chdir('./imgs') # load image. 
 
 
-class Still_Image():
+class Capture():
     def __init__(self,calibration_pts):        
         self.capturing = False  # Flag for frame difference capture. 
         self.textColor = 255
         self.initBrightness = 40
         self.calibration_pts = calibration_pts
         self.threshold_black = 183
+        self.filename = 'f3.png'
+        self.frame = cv2.imread(self.filename, 0)
+        self.frame = cv2.flip(self.frame, 0); self.frame = cv2.flip(self.frame, 1)
+        self.row,self.column = np.shape(self.frame)[0], np.shape(self.frame)[1]
+        
 
 
     def changeCamera(self, choice):
@@ -30,65 +36,38 @@ class Still_Image():
     def changeBt(self, val):
         self.threshold_black = val
 
+    def draw(self, frame):
+        print "Check threshold value "
+        self.checkThreshold = np.mean(frame) + 0.1* np.mean(frame)
+        print self.checkThreshold
+        self.threshold_black= self.checkThreshold
 
-    def frame_adjust(self, f):
-        f = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
-        f = cv2.flip(f, 0)
-        return cv2.flip(f, 1)
+        self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
+                                self.threshold_black,  self.row, self.column)
+        # Extract blob coordinates
+        self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
+        # Return the diameter of the blob.
+        self.bblob_sizes = lib.Stones.findSize(self.keypoints)
+        # Draw circles for blob
+        frame = cv2.drawKeypoints(frame, self.keypoints, np.array([]), (0, 255, 0),
+                                cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    # ---------------
+        cv2.imshow('Results', cv2.resize(frame, None, \
+            fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
+        cv2.imshow('Black', cv2.resize(self.black_blob, None, \
+            fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
+            # cv2.waitKey(400)
+
+
 
     def startCapture(self):
-        self.capturing = True
-        filename = 'f3.png'
-        frame = cv2.imread(filename, 0)
-        frame = self.frame_adjust(frame)
-        row,column = np.shape(frame)[0], np.shape(frame)[1]
-        checkThreshold = np.mean(frame) + 0.3* np.mean(frame)
-        print "Check threshold value "
-        print checkThreshold
-        while(self.capturing):
-
-                        print "Check threshold value "
-                        print checkThreshold
-                        self.threshold_black=checkThreshold
-
-                        # plt.hist(frame)
-                        # plt.title("Histogram for automatic threshold selection")
-                        # plt.show();
-                        print np.mean(frame)
-                        self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
-                                                self.threshold_black,  row, column)
-                        # Extract blob coordinates
-                        self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
-                        # Return the diameter of the blob.
-                        self.bblob_sizes = lib.Stones.findSize(self.keypoints)
-
-
-                        # Needs to put a mode selection: soundscapes, music, 
-                        self.music = MusGen(self.blob_zones)
-                        self.music.start()
-                        # Draw circles for blob
-                        frame = cv2.drawKeypoints(frame, self.keypoints, np.array([]), (0, 255, 0),
-                                                cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-                    # ---------------
-                        cv2.imshow('Results', cv2.resize(frame, None, \
-                            fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
-                        cv2.imshow('Black', cv2.resize(self.black_blob, None, \
-                            fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
-                        self.snapshot_flag = False
-                        self.just_snapped = True
-
-                    elif (self.snapshot_flag == True) & (mean_diff > self.snap_thres):
-                        pass
-                    else:
-                        pass
-                except UnboundLocalError:
-                    pass
-            except ValueError:
-                pass
-            except cv2.error:
-                pass
-            previous_frame = frame.copy()
-            cv2.waitKey(400)
+        print "Start Capture."
+        frame = calibrate(self.frame, self.calibration_pts)
+        self.draw(frame)
+        # Needs to put a mode selection: soundscapes, music, 
+        # self.music = MusGen(self.blob_zones)
+        # self.music.start()
+        
 
     def endCapture(self):
         print ("Stop")
@@ -101,7 +80,7 @@ class Still_Image():
 
     def quitCapture(self):
     	print "inside quit capture"
-        cap = self.c
+    #    cap = self.c
         self.capturing = False
         cv2.destroyAllWindows()
         try:
@@ -109,7 +88,6 @@ class Still_Image():
             self.music.stopit()
         except AttributeError:
             pass
-        cap.release()
         QtCore.QCoreApplication.quit()
 
 class Window(QtGui.QWidget):
@@ -167,11 +145,22 @@ class Window(QtGui.QWidget):
         self.show()
     def startButton(self):
     	if(self.start_button.isChecked()):
-    		calibration_pts = getCalibrationCoordinates(cameraChoice)
-        	if(calibration_pts.any()):
+
+            filename = 'f3.png'
+            original_img = cv2.imread(filename, 0)
+            original_img = cv2.flip(original_img, 0); original_img = cv2.flip(original_img, 1)
+            fig = plt.figure(1, figsize = (10, 10))
+            plt.gca().imshow(original_img, cmap = cm.Greys_r),plt.title('Click on 4 corners to calibrate.')
+            pts = np.asarray(plt.ginput(4))
+            print pts
+            if len(pts) == 4:
+                plt.close()
+            calibration_pts = pts.astype(int)
+            if(calibration_pts.any()):
         		self.capture = Capture(calibration_pts)
-        		print self.capture
         		self.capture.startCapture()
+
+
     def endButton(self):
     	if(self.end_button.isChecked()):
     		if(self.capture == 0):

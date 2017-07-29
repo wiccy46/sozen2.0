@@ -51,7 +51,6 @@ class MusGen(threading.Thread):
         print (self.notes)  # .d.sads
         while(self.play_start):
             print "play"
-            print self.play_start
             self.rand_note()
             time.sleep(self.rand_rythm())
 
