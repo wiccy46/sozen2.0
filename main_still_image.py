@@ -1,31 +1,4 @@
 
-"""
-Zen Garden Ambient Soundscape
-Designed by Jiajun Yang, Bielefeld University, 2017.
-
-This is v2. Which includes a new musical mode. The GUI is reimplemented in QT. Sound will be
-potentially controlled within python in a pure sample based trigger system through PYO.
-
-It uses a standard webcam to extract stone and sand features of the zen garden and send the
-information to PureData via OSC
-
-Module required: OpenCV2, Numpy, matplotlib, PyOSC, pyserial
-Subfiles: oscPart, stones, sands
-
-Based on choice (1:2), the program can process either webcam image or saved image files. During the camera
-extraction, the feat
-Based on choice (1:2), the program can process either webcam image or saved image files. During the camerure extraction functions are not ran constantly. Instead, the program takes a snapshot
-everytime the user removes the hand from the captured area based on the frame differences. 
-
-At the beginning of the program, one shall crop the image (both webcam and file) by choosing the 4 corner of the 
-intended area. The user shall start from the top left corner --> top right --> bottom left --> bottom right (Z shape).
-
-The python part only manage feature extraction, the Soundscape is generated/triggered entirely on the PureData. 
-For information about the Soundscape, please refers to the PD patches. 
-
-
-
-"""
 
 
 import cv2, sys, time
@@ -38,28 +11,21 @@ import matplotlib.pyplot as plt
 global calibration_pts
 
 
-cameraChoice = 0
 choice = lib.DevMode.devChoice()
+os.chdir('./imgs') # load image. 
 
 
-
-class Capture():
+class Still_Image():
     def __init__(self,calibration_pts):        
         self.capturing = False  # Flag for frame difference capture. 
-        self.cameraChoice = 0
-        #self.c = cv2.VideoCapture(cameraChoice)
         self.textColor = 255
         self.initBrightness = 40
         self.calibration_pts = calibration_pts
         self.threshold_black = 183
-        self.snap_thres = 8.0  # the mean difference value which allows snapshot to be taken. 
-        self.just_snapped = False
-        self.snapshot_flag = False
-        self.snapshot_time_gap = 1.5  # Wait certain second before actually taking the shot. 
+
 
     def changeCamera(self, choice):
-        cameraChoice = choice
-        self.c = cv2.VideoCapture(cameraChoice)
+        pass
 
     def changeBt(self, val):
         self.threshold_black = val
@@ -67,40 +33,20 @@ class Capture():
 
     def frame_adjust(self, f):
         f = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
-        # Left and now is wrongly flip.
         f = cv2.flip(f, 0)
         return cv2.flip(f, 1)
 
     def startCapture(self):
         self.capturing = True
-        self.c=cv2.VideoCapture(cameraChoice)
-        rubbish, original_frame = self.c.read()  # ret is useless
-        original_frame = self.frame_adjust(original_frame)
-        previous_frame = np.array([])
-        self.just_snapped = False
-        self.snapshot_flag = False
+        filename = 'f3.png'
+        frame = cv2.imread(filename, 0)
+        frame = self.frame_adjust(frame)
+        row,column = np.shape(frame)[0], np.shape(frame)[1]
+        checkThreshold = np.mean(frame) + 0.3* np.mean(frame)
+        print "Check threshold value "
+        print checkThreshold
         while(self.capturing):
-            ret, frame = self.c.read()
-            frame = self.frame_adjust(frame)
-            try:
-                diff = cv2.absdiff(frame, previous_frame)
-                mean_diff = float(np.mean(diff))
-                if self.just_snapped:
-                    mean_diff = 3.0
-                    self.just_snapped = False
 
-                try:
-                    if(self.snapshot_flag == False) & (mean_diff > self.snap_thres):
-                        print ("Mean Diff: " + str(mean_diff))
-                        self.snapshot_flag = True
-                    elif(self.snapshot_flag == True) & (mean_diff < self.snap_thres):
-
-                        # Take a snap shot
-                        time.sleep(self.snapshot_time_gap) # wait a bit
-                        ret, frame = self.c.read()
-                        frame = self.frame_adjust(frame)
-                        row,column = np.shape(frame)[0], np.shape(frame)[1]
-                        checkThreshold = np.mean(frame) + 0.3* np.mean(frame)
                         print "Check threshold value "
                         print checkThreshold
                         self.threshold_black=checkThreshold
