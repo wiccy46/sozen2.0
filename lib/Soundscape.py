@@ -5,12 +5,33 @@ import pyaudio, wave
 
 BUFFER_SIZE = 1024
 
+"""
+It needs a clear soundfile management system. 
+"""
 
+OBJECT = []
+OBJECT_folders = []
+for (path, dirnames, filenames) in os.walk('./audio/soundscape/object/'):
+    OBJECT_folders.extend(os.path.join(path, name) for name in dirnames)
+    OBJECT.extend(os.path.join(path, name) for name in filenames)
+
+
+ENV = []
+ENV_folders = []
+for (path, dirnames, filenames) in os.walk('./audio/soundscape/env/'):
+    ENV_folders.extend(os.path.join(path, name) for name in dirnames)
+    ENV.extend(os.path.join(path, name) for name in filenames)
+
+
+# Do a string search based on : birds, winds and so on. Need to rename the folders. 
 
 class SoundscapeGen(threading.Thread):
 	def __init__(self, chn = 2):  # By default stereo\
 		threading.Thread.__init__(self)
-		filename = "./audio/soundscape/env/forest.wav"
+		# self.envPath = "./audio/soundscape/env/"
+		# self.objectPath = "./audio/soundscape/object/"
+		# filename = self.envPath + "forest.wav"
+		filename = files[0]
 		self.wf = wave.open(filename, 'rb')
 		self.p = pyaudio.PyAudio()
 		self.stream = self.p.open(format=self.p.get_format_from_width(self.wf.getsampwidth()),

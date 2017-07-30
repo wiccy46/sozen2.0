@@ -71,7 +71,6 @@ class Capture():
         self.soundscape_player.start()
 
 
-
         
     def endCapture(self):
         print ("Stop")
@@ -79,6 +78,11 @@ class Capture():
         try:
             self.music.stop_play()
             self.music.stopit()
+        except AttributeError:
+            pass
+        # For soundscape player. 
+        try:
+            self.soundscape_player.stopit()
         except AttributeError:
             pass
 
@@ -95,7 +99,6 @@ class Capture():
 
         try:
             self.soundscape_player.stopit()
-            print "stop soundscape player. "
         except AttributeError:
             pass
         QtCore.QCoreApplication.quit()

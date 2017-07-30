@@ -71,6 +71,8 @@ class MusGen(threading.Thread):
         print ("Stop it called. ")
         self._stop.set()
 
+    
+
     def stopped(self):
         return self._stopper.is_set()
 
