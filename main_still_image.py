@@ -1,8 +1,6 @@
 """
 Still image version. 
 """
-
-
 import cv2, sys, time, os
 import numpy as np
 from PyQt4 import QtGui, QtCore
@@ -12,10 +10,7 @@ from lib.MusGen import MusGen
 import matplotlib.pyplot as plt
 global calibration_pts
 import matplotlib.cm as cm
-
-cameraChoice = 0
-choice = lib.DevMode.devChoice()
-os.chdir('./imgs') # load image. 
+from lib.Soundscape import SoundscapeGen
 
 
 class Capture():
@@ -25,28 +20,27 @@ class Capture():
         self.initBrightness = 40
         self.calibration_pts = calibration_pts
         self.threshold_black = 183
-        self.filename = 'f3.png'
+        self.filename = './imgs/f3.png'
         self.frame = cv2.imread(self.filename, 0)
         self.frame = cv2.flip(self.frame, 0); self.frame = cv2.flip(self.frame, 1)
-        self.row,self.column = np.shape(self.frame)[0], np.shape(self.frame)[1]
         self.sound_source = source
         
 
 
-    def changeCamera(self, choice):
+    def changeCamera(self, choice = 0):
         pass
 
     def changeBt(self, val):
         self.threshold_black = val
 
-    def draw(self, frame):
+    def draw(self, frame, row, column):
         print "Check threshold value "
         self.checkThreshold = np.mean(frame) + 0.1* np.mean(frame)
         print self.checkThreshold
         self.threshold_black= self.checkThreshold
 
         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
-                                self.threshold_black,  self.row, self.column)
+                                self.threshold_black,  row, column)
         # Extract blob coordinates
         self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
         # Return the diameter of the blob.
@@ -66,12 +60,19 @@ class Capture():
     def startCapture(self):
         print "Start Capture."
         frame = calibrate(self.frame, self.calibration_pts)
-        self.draw(frame)
+        row, column = np.shape(self.frame)[0], np.shape(self.frame)[1]
+        self.draw(frame, row, column)
         # Needs to put a mode selection: soundscapes, music, 
-        self.music = MusGen(self.blob_zones, self.sound_source)
-        self.music.start()
-        
+        # self.music = MusGen(self.blob_zones, self.sound_source)
+        # self.music.start()
 
+        # Problem. This is not in a separate thread. 
+        self.soundscape_player = SoundscapeGen()
+        self.soundscape_player.start()
+
+
+
+        
     def endCapture(self):
         print ("Stop")
         self.capturing = False
@@ -89,6 +90,12 @@ class Capture():
         try:
             self.music.stop_play()
             self.music.stopit()
+        except AttributeError:
+            pass
+
+        try:
+            self.soundscape_player.stopit()
+            print "stop soundscape player. "
         except AttributeError:
             pass
         QtCore.QCoreApplication.quit()
@@ -149,16 +156,17 @@ class Window(QtGui.QWidget):
     def startButton(self):
     	if(self.start_button.isChecked()):
 
-            filename = 'f3.png'
+            filename = './imgs/f3.png'
             original_img = cv2.imread(filename, 0)
             original_img = cv2.flip(original_img, 0); original_img = cv2.flip(original_img, 1)
             fig = plt.figure(1, figsize = (10, 10))
             plt.gca().imshow(original_img, cmap = cm.Greys_r),plt.title('Click on 4 corners to calibrate.')
             pts = np.asarray(plt.ginput(4))
-            print pts
             if len(pts) == 4:
                 plt.close()
             calibration_pts = pts.astype(int)
+            print "Calibration points: " 
+            print  calibration_pts
             if(calibration_pts.any()):
         		self.capture = Capture(calibration_pts)
         		self.capture.startCapture()

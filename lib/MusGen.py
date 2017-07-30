@@ -1,6 +1,10 @@
 import numpy as np
 import threading, sys, time, random
 from lib.OscPart import sc
+import pygame, os
+
+
+# os.chdir('./audio/sine') # load image. 
 
 EP = 1 / 9 # The equal probablity of the 9 grid.
 
@@ -17,6 +21,10 @@ class MusGen(threading.Thread):
         self.play_start = False
         self.bpm = 80
         self.sound_source = sound_source
+        pygame.mixer.init()
+        print "Pygame initilization completed."
+
+
 
     def stop_play(self):
         self.play_start = False
