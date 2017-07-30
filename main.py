@@ -44,8 +44,7 @@ choice = lib.DevMode.devChoice()
 
 
 class Capture():
-
-    def __init__(self,calibration_pts,black_val_percent):        
+    def __init__(self,calibration_pts,black_val_percent,sound_source = 'python'):        
         self.capturing = False  # Flag for frame difference capture. 
         self.cameraChoice = 0
         #self.c = cv2.VideoCapture(cameraChoice)
@@ -58,6 +57,8 @@ class Capture():
         self.snapshot_flag = False
         self.snapshot_time_gap = 1.5  # Wait certain second before actually taking the shot. 
         self.threshold_black_val = 0
+        self.sound_source = sound_source
+
     def changeCamera(self, choice):
         cameraChoice = choice
         self.c = cv2.VideoCapture(cameraChoice)
@@ -113,7 +114,7 @@ class Capture():
 
 
                         # Needs to put a mode selection: soundscapes, music, 
-                        self.music = MusGen(self.blob_zones)
+                        self.music = MusGen(self.blob_zones, self.sound_source)
                         self.music.start()
                         # Draw circles for blob
                         frame = cv2.drawKeypoints(frame, self.keypoints, np.array([]), (0, 255, 0),

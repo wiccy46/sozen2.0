@@ -4,8 +4,11 @@ from lib.OscPart import sc
 
 EP = 1 / 9 # The equal probablity of the 9 grid.
 
+# Mode defines where the sound source will come from: python, supercollider, puredata
+
+
 class MusGen(threading.Thread):
-    def __init__(self, zones):
+    def __init__(self, zones, sound_source):
         threading.Thread.__init__(self)
         self.zones = zones
         self.baseNote = -1
@@ -13,6 +16,7 @@ class MusGen(threading.Thread):
         self.notes = np.zeros(9)
         self.play_start = False
         self.bpm = 80
+        self.sound_source = sound_source
 
     def stop_play(self):
         self.play_start = False

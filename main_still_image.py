@@ -17,7 +17,7 @@ os.chdir('./imgs') # load image.
 
 
 class Capture():
-    def __init__(self,calibration_pts):        
+    def __init__(self,calibration_pts, source = 'python'):        
         self.capturing = False  # Flag for frame difference capture. 
         self.textColor = 255
         self.initBrightness = 40
@@ -27,6 +27,7 @@ class Capture():
         self.frame = cv2.imread(self.filename, 0)
         self.frame = cv2.flip(self.frame, 0); self.frame = cv2.flip(self.frame, 1)
         self.row,self.column = np.shape(self.frame)[0], np.shape(self.frame)[1]
+        self.sound_source = source
         
 
 
@@ -65,8 +66,8 @@ class Capture():
         frame = calibrate(self.frame, self.calibration_pts)
         self.draw(frame)
         # Needs to put a mode selection: soundscapes, music, 
-        # self.music = MusGen(self.blob_zones)
-        # self.music.start()
+        self.music = MusGen(self.blob_zones, self.sound_source)
+        self.music.start()
         
 
     def endCapture(self):
