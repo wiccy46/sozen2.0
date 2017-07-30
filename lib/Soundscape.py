@@ -28,11 +28,8 @@ for (path, dirnames, filenames) in os.walk('./audio/soundscape/env/'):
 class SoundscapeGen(threading.Thread):
 	def __init__(self, chn = 2):  # By default stereo\
 		threading.Thread.__init__(self)
-		# self.envPath = "./audio/soundscape/env/"
-		# self.objectPath = "./audio/soundscape/object/"
-		# filename = self.envPath + "forest.wav"
-		filename = files[0]
-		self.wf = wave.open(filename, 'rb')
+		self.filename = OBJECT[0]
+		self.wf = wave.open(self.filename, 'rb')
 		self.p = pyaudio.PyAudio()
 		self.stream = self.p.open(format=self.p.get_format_from_width(self.wf.getsampwidth()),
                 channels=self.wf.getnchannels(),
