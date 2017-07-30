@@ -1,4 +1,6 @@
-
+"""
+Still image version. 
+"""
 
 
 import cv2, sys, time, os
