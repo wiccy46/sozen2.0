@@ -1,7 +1,7 @@
 import numpy as np
 import threading, sys, time, random
 from lib.OscPart import sc
-import pygame, os
+import  os
 
 
 # os.chdir('./audio/sine') # load image. 
@@ -21,9 +21,7 @@ class MusGen(threading.Thread):
         self.play_start = False
         self.bpm = 80
         self.sound_source = sound_source
-        pygame.mixer.init()
-        print "Pygame initilization completed."
-
+        
 
 
     def stop_play(self):
