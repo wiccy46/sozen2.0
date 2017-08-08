@@ -11,6 +11,8 @@ import matplotlib.cm as cm
 
 def calibrate(inputImage, clb_pts):
 	# 1. Slice the img
+	inputImage = cv2.equalizeHist(inputImage)
+	
 	new_img = inputImage[np.min(clb_pts[:, 1]) : np.max(clb_pts[:,1]), \
 		np.min(clb_pts[:, 0]): np.max(clb_pts[ :, 0])]
 	row, column = np.shape(new_img)[0], np.shape(new_img)[1]
@@ -38,6 +40,7 @@ def getCalibrationCoordinates(choice):
 	cap = cv2.VideoCapture(choice)
 	ret, original_img = cap.read()
 	original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
+
 	# Left and now is wrongly flip.
 	original_img = cv2.flip(original_img, 0); original_img = cv2.flip(original_img, 1)
 	fig = plt.figure(1, figsize = (10, 10))

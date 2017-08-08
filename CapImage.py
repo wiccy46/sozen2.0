@@ -9,10 +9,18 @@ global pts
 def getCalibrationCoordinates(choice,i):
 	cap = cv2.VideoCapture(choice)
 	ret, original_img = cap.read()
-	# Left and now is wrongly flip.
 	original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
+	original_img = cv2.equalizeHist(original_img)
+	#original_img = np.hstack((original_img,newimg)) 
+	# Left and now is wrongly flip.
+	
+	#original_img[:,:,2] = [[max(pixel - 25, 0) if pixel < 190 else min(pixel + 25, 255) for pixel in row] for row in original_img[:,:,2]]
+	#cv2.imshow('contrast', cv2.cvtColor(original_img, cv2.COLOR_HSV2BGR))
+	#cv2.waitKey(1000)
+	
+	print "Inside the function"
 	fig = plt.figure(1, figsize = (10, 10))
-	if(i == 1):
+	if(i != 1):
 		plt.gca().imshow(original_img, cmap = cm.Greys_r),plt.title('Click on 4 corners to calibrate.')
 		global pts 
 		pts = np.asarray(plt.ginput(4))
@@ -21,7 +29,7 @@ def getCalibrationCoordinates(choice,i):
 			plt.close()
 
 	pts = pts.astype(int)
-
+	print pts
 	return calibrate(original_img,pts)
 def calibrate(inputImage, clb_pts):
 	# 1. Slice the img
@@ -45,10 +53,10 @@ while(input):
 	if(save == 's'):
 		calibration_img = getCalibrationCoordinates(0,i)
 
-		row, column = np.shape(calibration_img)[0], np.shape(calibration_img)[1]
-		img =calibration_img[int(row/3 ): int(row/3)*2, int(column/3) : int(column/3)*2]
-		print img
+		#row, column = np.shape(calibration_img)[0], np.shape(calibration_img)[1]
+		#img =calibration_img[int(row ): int(row), int(column) : int(column)]
+		#print img
 		
-		cv2.imwrite("machineLearning/TrainData/VerticalLine"+str(i)+".png",img) 
+		cv2.imwrite("machineLearning/TrainData/VerticalLine"+str(i)+".png",calibration_img) 
 	if(save == 'x'):
 		input = False

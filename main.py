@@ -33,6 +33,7 @@ import numpy as np
 from PyQt4 import QtGui, QtCore
 import lib.Stones, lib.DevMode
 from lib.CameraCalibration import getCalibrationCoordinates, calibrate
+from lib.findLines import detect_lines
 from lib.MusGen import MusGen
 import matplotlib.pyplot as plt
 global calibration_pts
@@ -101,6 +102,8 @@ class Capture():
                         time.sleep(self.snapshot_time_gap) # wait a bit
                         ret, frame = self.c.read()
                         frame = self.frame_adjust(frame)
+                        lines = detect_lines(frame)
+                        print lines
                         row,column = np.shape(frame)[0], np.shape(frame)[1]
                         mean_value= np.mean(frame)
                         self.threshold_black_val = mean_value + (self.threshold_black/100)* mean_value
