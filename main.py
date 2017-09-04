@@ -45,7 +45,7 @@ choice = lib.DevMode.devChoice()
 
 
 class Capture():
-    def __init__(self,calibration_pts,black_val_percent,sound_source = 'python'):        
+    def __init__(self,calibration_pts,black_val_percent,theme,sound_source = 'python'):        
         self.capturing = False  # Flag for frame difference capture. 
         self.cameraChoice = 0
         #self.c = cv2.VideoCapture(cameraChoice)
@@ -59,6 +59,7 @@ class Capture():
         self.snapshot_time_gap = 1.5  # Wait certain second before actually taking the shot. 
         self.threshold_black_val = 0
         self.sound_source = sound_source
+        self.theme=theme
 
     def changeCamera(self, choice):
         cameraChoice = choice
@@ -114,7 +115,7 @@ class Capture():
                         self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
                         # Return the diameter of the blob.
                         self.bblob_sizes = lib.Stones.findSize(self.keypoints)
-
+                        print self.bblob_sizes
 
                         # Needs to put a mode selection: soundscapes, music, 
                         self.music = MusGen(self.blob_zones, self.sound_source)
@@ -171,6 +172,7 @@ class Window(QtGui.QWidget):
         super(Window, self).__init__()
         self.setWindowTitle('SoZen v2.0')
         self.capture=0
+        self.theme = "Forest"
         self.camera_choice_box = QtGui.QSpinBox()
         self.camera_choice_box.setValue(0)
         self.camera_choice_box.setRange(0, 4)
@@ -230,15 +232,70 @@ class Window(QtGui.QWidget):
         # box = QtGui.QHBoxLayout(self)
         # box.addLayout(lbox)
         # box.addLayout(rbox)
-        self.setLayout(lbox)
+        
+      	verticalradio = QtGui.QVBoxLayout(self)
+      	self.label = QtGui.QLabel("Select the theme", self)
+      	
+      	verticalradio.addWidget(self.label)
+      	radiobutton = QtGui.QHBoxLayout()
+      	
+      	self.r1 = QtGui.QRadioButton("Forest")
+      	self.r1.setChecked(True)
+      	self.r1.toggled.connect(lambda:self.btnstate(self.r1))
+      	radiobutton.addWidget(self.r1)
+		
+      	self.r2 = QtGui.QRadioButton("Sea")
+      	self.r2.toggled.connect(lambda:self.btnstate(self.r2))
+      	radiobutton.addWidget(self.r2)
+      	radiobutton1 = QtGui.QHBoxLayout()
+      	self.r3 = QtGui.QRadioButton("Fireplace")
+      	self.r3.toggled.connect(lambda:self.btnstate(self.r3))
+      	radiobutton1.addWidget(self.r3)
+
+      	self.r4 = QtGui.QRadioButton("Electronic")
+      	self.r4.toggled.connect(lambda:self.btnstate(self.r4))
+      	radiobutton1.addWidget(self.r4)
+      	verticalradio.addLayout(radiobutton)
+      	verticalradio.addLayout(radiobutton1)
+
+        
+      	lbox.addLayout(verticalradio)
+      	self.setLayout(lbox)
+
         self.setFixedSize(300, 300)
         self.show()
+    def btnstate(self,b):
+    	
+		
+    	if b.text() == "Forest":
+         if b.isChecked() == True:
+            self.theme="Forest"
+         else:
+            print b.text()+" is deselected"
+        if b.text() == "Sea":
+         if b.isChecked() == True:
+            self.theme="Sea"
+         else:
+            print b.text()+" is deselected"
+        if b.text() == "Fireplace":
+         if b.isChecked() == True:
+            self.theme="Fireplace"
+         else:
+            print b.text()+" is deselected"
+        if b.text() == "Electronic":
+         if b.isChecked() == True:
+            self.theme="Electronic"
+         else:
+            print b.text()+" is deselected"
+				
+
+	 
     def startButton(self):
-    	if(self.start_button.isChecked()):
-    		calibration_pts = getCalibrationCoordinates(cameraChoice)
-        	if(calibration_pts.any()):
-        		self.capture = Capture(calibration_pts,self.thresholdPercent)
-        		self.capture.startCapture()
+
+    	calibration_pts = getCalibrationCoordinates(cameraChoice)
+        if(calibration_pts.any()):
+        	self.capture = Capture(calibration_pts,self.thresholdPercent,self.theme)
+        	self.capture.startCapture()
     def endButton(self):
     	if(self.end_button.isChecked()):
     		if(self.capture == 0):
