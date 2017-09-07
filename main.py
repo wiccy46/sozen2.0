@@ -89,6 +89,8 @@ class Capture():
             try:
                 diff = cv2.absdiff(frame, previous_frame)
                 mean_diff = float(np.mean(diff))
+                print "previous frame", previous_frame
+                print "mean diff",mean_diff
                 if self.just_snapped:
                     mean_diff = 3.0
                     self.just_snapped = False
@@ -103,19 +105,24 @@ class Capture():
                         time.sleep(self.snapshot_time_gap) # wait a bit
                         ret, frame = self.c.read()
                         frame = self.frame_adjust(frame)
-                        lines = detect_lines(frame)
-                        print lines
+                      
                         row,column = np.shape(frame)[0], np.shape(frame)[1]
                         mean_value= np.mean(frame)
                         self.threshold_black_val = mean_value + (self.threshold_black/100)* mean_value
+                        print self.threshold_black_val
+                        print "frame", frame
+                        print "row", row
+                        #print "columncolumn
                         self.keypoints, self.black_blob, self.blob_zones = lib.Stones.blobDetection(frame,\
                                         self.threshold_black_val,  row, column)
-
+                        print "key points"
+                        print self.keypoints
                         # Extract blob coordinates
                         self.bblob_coordinates = lib.Stones.findCoordinates(self.keypoints)
                         # Return the diameter of the blob.
                         self.bblob_sizes = lib.Stones.findSize(self.keypoints)
-                        print self.bblob_sizes
+                        print " Checkout the sizes of the stones "
+                        print self.bblob_sizes.shape
 
                         # Needs to put a mode selection: soundscapes, music, 
                         self.music = MusGen(self.blob_zones, self.sound_source)

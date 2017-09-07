@@ -111,7 +111,7 @@ def findBlobs(image, frame_row):
 	# Keypoint documentation
 	#http://docs.opencv.org/modules/features2d/doc/common_interfaces_of_feature_detectors.html#Point2f%20pt
 	keypoints = detector.detect(255-image)
-
+	print "keypoint", keypoints
 	return keypoints
 
 
@@ -126,10 +126,12 @@ def blobDetection(img, threshold_black,  frame_row, \
 	frame_column):
 	# Convert to binary for blob tracking
 	ret, black_blob = cv2.threshold(255-img, threshold_black, 255, cv2.THRESH_BINARY)
+	print "black blob",black_blob
 	keypoints_black = findBlobs(black_blob, frame_row)
 
 
 	black_keypoint_amount = len(keypoints_black)
+	print "key point amount ", black_keypoint_amount
 	zones, x , y, sizes = findZonesCoordinates(keypoints_black, frame_row, frame_column)
 	zones[np.argmax(sizes)] = 2 # Make the largest 2. 
 	sortedZone = np.nonzero(zones)[0]  + 1

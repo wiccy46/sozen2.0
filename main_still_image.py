@@ -67,8 +67,8 @@ class Capture():
         # self.music.start()
 
         # Problem. This is not in a separate thread. 
-        self.soundscape_player = SoundscapeGen()
-        self.soundscape_player.start()
+        #self.soundscape_player = SoundscapeGen()
+        #self.soundscape_player.start()
 
 
         
